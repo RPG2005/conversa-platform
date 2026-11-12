@@ -1,6 +1,28 @@
 name: chat-yes-no-upgrade
 
 services:
+  api:
+    build:
+      context: ./apps/api
+    container_name: chat-yes-no-api
+    restart: unless-stopped
+    profiles: ["app"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-chat_user}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-chat_yes_no}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379
+      API_SECRET: ${API_SECRET:?Set API_SECRET in .env}
+      HOST: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - chat_network
+
   postgres:
     image: postgres:16-alpine
     container_name: chat-yes-no-postgres

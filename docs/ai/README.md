@@ -6,7 +6,7 @@ Este directorio convierte el objetivo del producto en entregas MVP pequeñas. Un
 
 | MVP | Resultado | Estado inicial |
 | --- | --- | --- |
-| [MVP 01](mvps/01-api-base.md) | API con healthcheck, configuración y migraciones | Pendiente |
+| [MVP 01](mvps/01-api-base.md) | API con healthcheck, configuración y migraciones | En progreso |
 | [MVP 02](mvps/02-identidad.md) | Registro, login y sesiones seguras | Pendiente |
 | [MVP 03](mvps/03-conversaciones.md) | Conversaciones privadas y mensajes persistentes | Pendiente |
 | [MVP 04](mvps/04-tiempo-real.md) | Mensajes, presencia y escritura en tiempo real | Pendiente |

@@ -22,9 +22,9 @@ Los nombres de host anteriores funcionan entre contenedores. Desde el equipo anf
 
 ## Próximos entregables técnicos
 
-1. Crear `apps/api` con autenticación, migraciones y healthcheck.
-2. Definir el paquete `packages/contracts` con DTOs y validación de esquemas.
-3. Migrar o crear `apps/frontend` y conectarlo a la API.
+1. Definir el paquete `packages/contracts` con DTOs y validación de esquemas.
+2. Migrar o crear `apps/frontend` y conectarlo a la API.
+3. Añadir autenticación y la primera migración mediante `apps/api`.
 4. Añadir un gateway WebSocket y persistencia de mensajes.
 5. Añadir CI que ejecute tests, lint y build de cada aplicación.
 
@@ -34,4 +34,5 @@ Los nombres de host anteriores funcionan entre contenedores. Desde el equipo anf
 docker compose logs -f postgres
 docker compose exec postgres psql -U chat_user -d chat_yes_no
 docker compose exec redis redis-cli -a $env:REDIS_PASSWORD ping
+docker compose --profile app run --rm api npm run db:migrate
 ```
