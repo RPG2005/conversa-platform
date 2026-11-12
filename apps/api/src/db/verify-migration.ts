@@ -5,12 +5,16 @@ const config = loadConfig();
 const pool = new Pool({ connectionString: config.DATABASE_URL });
 
 try {
+  const expectedTables = ['users', 'sessions', 'conversations', 'conversation_members', 'messages'];
   const result = await pool.query<{ table_name: string }>(
-    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users'",
+    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = ANY($1)",
+    [expectedTables],
   );
+  const existingTables = new Set(result.rows.map((row) => row.table_name));
+  const missingTables = expectedTables.filter((table) => !existingTables.has(table));
 
-  if (result.rowCount !== 1) {
-    throw new Error('Expected users table was not created by migrations.');
+  if (missingTables.length > 0) {
+    throw new Error(`Expected tables were not created by migrations: ${missingTables.join(', ')}`);
   }
 
   console.info('Database migration verification completed successfully.');
