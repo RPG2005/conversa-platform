@@ -15,6 +15,13 @@
       "when": 1794486999068,
       "tag": "0001_cute_spiral",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794496358314,
+      "tag": "0002_broken_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }
