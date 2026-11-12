@@ -3,11 +3,14 @@ import { Redis } from 'ioredis';
 import { buildApp } from './app.js';
 import { createAuthRateLimiter } from './auth/rate-limit.js';
 import { createAuthRepository } from './auth/repository.js';
+import { createConversationRepository } from './conversations/repository.js';
+import { createRealtimeGateway } from './realtime/gateway.js';
 import { loadConfig } from './config.js';
 
 const config = loadConfig();
 const database = new Pool({ connectionString: config.DATABASE_URL });
 const redis = new Redis(config.REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 1 });
+const realtimeGateway = createRealtimeGateway(redis, redis.duplicate());
 
 const app = buildApp(config, {
   checkDatabase: async () => {
@@ -20,12 +23,13 @@ const app = buildApp(config, {
 }, {
   repository: createAuthRepository(database),
   rateLimiter: createAuthRateLimiter(redis, config.AUTH_RATE_LIMIT, config.AUTH_RATE_LIMIT_WINDOW_SECONDS),
-});
+}, createConversationRepository(database), realtimeGateway);
 
 const shutdown = async () => {
   await app.close();
   await database.end();
   await redis.quit();
+  await realtimeGateway.close();
 };
 
 process.on('SIGINT', () => void shutdown().then(() => process.exit(0)));

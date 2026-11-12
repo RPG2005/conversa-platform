@@ -1,0 +1,24 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/auth/register'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "ada+{{run_id}}@example.test",
+      "displayName": "Ada",
+      "password": "{{test_password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Ada is registered', () => pm.response.to.have.status(201));
+      const cookie = pm.response.headers.get('Set-Cookie');
+      const match = cookie && cookie.match(/chat_session=([^;]+)/);
+      pm.expect(match, 'session cookie').to.not.be.null;
+      pm.environment.set('ada_session', match[1]);
+      pm.test('password hash is not exposed', () => pm.expect(pm.response.json().user.passwordHash).to.be.undefined);

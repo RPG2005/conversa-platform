@@ -1,0 +1,13 @@
+$kind: collection
+name: Chat Yes/No API
+description: Pruebas de salud, identidad y conversaciones privadas para desarrollo local.
+variables:
+  - key: base_url
+    value: 'http://localhost:3000'
+    description: URL de la API local.
+scripts:
+  - type: http:beforeRequest
+    code: |-
+      if (!pm.environment.get('run_id')) {
+        pm.environment.set('run_id', Date.now().toString());
+      }

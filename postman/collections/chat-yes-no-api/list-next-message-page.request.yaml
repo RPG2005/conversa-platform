@@ -1,0 +1,17 @@
+$kind: http-request
+method: GET
+url: '{{base_url}}/conversations/{{conversation_id}}/messages?limit=1&cursor={{next_cursor}}'
+order: 11000
+queryParams:
+  - key: limit
+    value: '1'
+  - key: cursor
+    value: '{{next_cursor}}'
+headers:
+  - key: Cookie
+    value: 'chat_session={{eve_session}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('the second page is returned', () => pm.response.to.have.status(200));
+      pm.expect(pm.response.json().messages).to.have.length(1);

@@ -1,0 +1,14 @@
+$kind: http-request
+method: GET
+url: '{{base_url}}/conversations/{{conversation_id}}/messages?limit=1'
+order: 6000
+queryParams:
+  - key: limit
+    value: '1'
+headers:
+  - key: Cookie
+    value: 'chat_session={{eve_session}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('non-member cannot discover the conversation', () => pm.response.to.have.status(404));

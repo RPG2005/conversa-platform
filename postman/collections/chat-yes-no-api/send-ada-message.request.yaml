@@ -1,0 +1,19 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/conversations/{{conversation_id}}/messages'
+order: 8000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Cookie
+    value: 'chat_session={{ada_session}}'
+body:
+  type: json
+  content: |-
+    {
+      "content": "Primer mensaje de la conversación"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Ada message is persisted', () => pm.response.to.have.status(201));

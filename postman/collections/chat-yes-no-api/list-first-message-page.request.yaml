@@ -1,0 +1,18 @@
+$kind: http-request
+method: GET
+url: '{{base_url}}/conversations/{{conversation_id}}/messages?limit=1'
+order: 10000
+queryParams:
+  - key: limit
+    value: '1'
+headers:
+  - key: Cookie
+    value: 'chat_session={{eve_session}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Eve can read messages after becoming a member', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.expect(body.messages).to.have.length(1);
+      pm.expect(body.nextCursor).to.be.a('string');
+      pm.environment.set('next_cursor', body.nextCursor);

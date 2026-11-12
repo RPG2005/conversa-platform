@@ -1,0 +1,12 @@
+$kind: http-request
+method: GET
+url: '{{base_url}}/health'
+order: 1000
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('healthcheck returns 200', () => pm.response.to.have.status(200));
+      pm.test('database and redis are healthy', () => {
+        const body = pm.response.json();
+        pm.expect(body).to.deep.equal({ status: 'ok', services: { database: 'ok', redis: 'ok' } });
+      });

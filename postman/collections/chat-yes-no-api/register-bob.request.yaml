@@ -1,0 +1,21 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/auth/register'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "bob+{{run_id}}@example.test",
+      "displayName": "Bob",
+      "password": "{{test_password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Bob is registered', () => pm.response.to.have.status(201));
+      const match = pm.response.headers.get('Set-Cookie').match(/chat_session=([^;]+)/);
+      pm.environment.set('bob_session', match[1]);

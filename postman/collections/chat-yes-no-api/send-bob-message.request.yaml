@@ -1,0 +1,19 @@
+$kind: http-request
+method: POST
+url: '{{base_url}}/conversations/{{conversation_id}}/messages'
+order: 9000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Cookie
+    value: 'chat_session={{bob_session}}'
+body:
+  type: json
+  content: |-
+    {
+      "content": "Respuesta de Bob"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Bob message is persisted', () => pm.response.to.have.status(201));

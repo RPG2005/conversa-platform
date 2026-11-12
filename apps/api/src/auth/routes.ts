@@ -34,7 +34,7 @@ const sessionCookieOptions = (config: AppConfig) => ({
   secure: config.NODE_ENV === 'production',
 });
 
-const requireSession = async (
+export const requireSession = async (
   request: FastifyRequest,
   reply: FastifyReply,
   repository: AuthRepository,
