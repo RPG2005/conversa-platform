@@ -4,6 +4,10 @@ const configSchema = z.object({
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
   API_SECRET: z.string().min(32),
+  SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(24 * 30).default(24),
+  AUTH_RATE_LIMIT: z.coerce.number().int().min(1).max(100).default(5),
+  AUTH_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).max(3_600).default(60),
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
   HOST: z.string().min(1).default('0.0.0.0'),
 });

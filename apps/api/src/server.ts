@@ -1,6 +1,8 @@
 import { Pool } from 'pg';
 import { Redis } from 'ioredis';
 import { buildApp } from './app.js';
+import { createAuthRateLimiter } from './auth/rate-limit.js';
+import { createAuthRepository } from './auth/repository.js';
 import { loadConfig } from './config.js';
 
 const config = loadConfig();
@@ -15,6 +17,9 @@ const app = buildApp(config, {
     if (redis.status === 'wait') await redis.connect();
     await redis.ping();
   },
+}, {
+  repository: createAuthRepository(database),
+  rateLimiter: createAuthRateLimiter(redis, config.AUTH_RATE_LIMIT, config.AUTH_RATE_LIMIT_WINDOW_SECONDS),
 });
 
 const shutdown = async () => {
