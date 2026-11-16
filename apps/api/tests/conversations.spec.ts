@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import WebSocket from 'ws';
 import { buildApp } from '../src/app.js';
 import { hashSessionToken, sessionCookieName } from '../src/auth/cookies.js';
 import type { AuthRepository, AuthSessionUser } from '../src/auth/types.js';
 import type { AppConfig } from '../src/config.js';
 import type { Conversation, ConversationRepository, Message } from '../src/conversations/types.js';
+import type { RealtimeGateway } from '../src/realtime/gateway.js';
 
 const config: AppConfig = {
   DATABASE_URL: 'postgresql://user:password@localhost:5432/chat_yes_no', REDIS_URL: 'redis://:password@localhost:6379',
@@ -17,9 +19,9 @@ const users: AuthSessionUser[] = [
   { id: '00000000-0000-4000-8000-000000000003', email: 'eve@example.com', displayName: 'Eve' },
 ];
 
-const apps: ReturnType<typeof buildApp>[] = [];
+const apps: Awaited<ReturnType<typeof buildApp>>[] = [];
 
-const setup = () => {
+const setup = async (realtimeGateway?: RealtimeGateway) => {
   const sessions = new Map(users.map((user) => [hashSessionToken(`${user.displayName.toLowerCase()}-token`), user.id]));
   const conversations = new Map<string, Conversation>();
   const members = new Map<string, Set<string>>();
@@ -54,17 +56,29 @@ const setup = () => {
       .sort((left, right) => `${right.createdAt.toISOString()}-${right.id}`.localeCompare(`${left.createdAt.toISOString()}-${left.id}`))
       .slice(0, limit),
   };
-  const app = buildApp(config, { checkDatabase: async () => undefined, checkRedis: async () => undefined }, { repository: authRepository, rateLimiter: { consume: async () => true } }, conversationRepository);
+  const app = await buildApp(config, { checkDatabase: async () => undefined, checkRedis: async () => undefined }, { repository: authRepository, rateLimiter: { consume: async () => true } }, conversationRepository, realtimeGateway);
   apps.push(app);
   const cookie = (name: string) => `${sessionCookieName}=${name}-token`;
   return { app, cookie };
 };
 
+const openSocket = (url: string, cookie: string) => new Promise<WebSocket>((resolve, reject) => {
+  const socket = new WebSocket(url, { headers: { cookie } });
+  socket.once('open', () => resolve(socket));
+  socket.once('error', reject);
+});
+
+const openThenClose = (url: string, cookie: string) => new Promise<number>((resolve, reject) => {
+  const socket = new WebSocket(url, { headers: { cookie } });
+  socket.once('close', (code) => resolve(code));
+  socket.once('error', reject);
+});
+
 afterEach(async () => { await Promise.all(apps.splice(0).map((app) => app.close())); });
 
 describe('conversation routes', () => {
   it('creates a private conversation and hides it from non-members', async () => {
-    const { app, cookie } = setup();
+    const { app, cookie } = await setup();
     const created = await app.inject({ method: 'POST', url: '/conversations', headers: { cookie: cookie('ada') }, payload: { participantEmail: 'bob@example.com' } });
     const conversationId = created.json().conversation.id;
     expect(created.statusCode).toBe(201);
@@ -74,7 +88,7 @@ describe('conversation routes', () => {
   });
 
   it('adds members, persists messages, and paginates with a cursor', async () => {
-    const { app, cookie } = setup();
+    const { app, cookie } = await setup();
     const created = await app.inject({ method: 'POST', url: '/conversations', headers: { cookie: cookie('ada') }, payload: { participantEmail: 'bob@example.com' } });
     const conversationId = created.json().conversation.id;
     expect((await app.inject({ method: 'POST', url: `/conversations/${conversationId}/members`, headers: { cookie: cookie('ada') }, payload: { email: 'eve@example.com' } })).statusCode).toBe(201);
@@ -87,5 +101,34 @@ describe('conversation routes', () => {
     expect(firstPage.json().nextCursor).toEqual(expect.any(String));
     const secondPage = await app.inject({ method: 'GET', url: `/conversations/${conversationId}/messages?limit=1&cursor=${firstPage.json().nextCursor}`, headers: { cookie: cookie('eve') } });
     expect(secondPage.json().messages[0].content).toBe('first');
+  });
+
+  it('upgrades authorized members to WebSocket and closes unauthorized users', async () => {
+    const subscriptions: string[] = [];
+    let markSubscribed: (() => void) | undefined;
+    const subscribed = new Promise<void>((resolve) => { markSubscribed = resolve; });
+    const realtimeGateway: RealtimeGateway = {
+      subscribe: async (conversationId) => {
+        subscriptions.push(conversationId);
+        markSubscribed?.();
+        return () => undefined;
+      },
+      publish: async () => undefined,
+      close: async () => undefined,
+    };
+    const { app, cookie } = await setup(realtimeGateway);
+    const created = await app.inject({ method: 'POST', url: '/conversations', headers: { cookie: cookie('ada') }, payload: { participantEmail: 'bob@example.com' } });
+    const conversationId = created.json().conversation.id as string;
+    await app.listen({ host: '127.0.0.1', port: 0 });
+    const address = app.server.address();
+    if (!address || typeof address === 'string') throw new Error('Expected a TCP server address');
+    const url = `ws://127.0.0.1:${address.port}/ws/conversations/${conversationId}`;
+
+    const adaSocket = await openSocket(url, cookie('ada'));
+    await subscribed;
+    expect(subscriptions).toEqual([conversationId]);
+    adaSocket.close();
+
+    expect(await openThenClose(url, cookie('eve'))).toBe(1008);
   });
 });

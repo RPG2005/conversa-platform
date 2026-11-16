@@ -16,7 +16,7 @@ const config: AppConfig = {
 
 describe('GET /health', () => {
   it('returns 200 when all dependencies are healthy', async () => {
-    const app = buildApp(config, {
+    const app = await buildApp(config, {
       checkDatabase: vi.fn().mockResolvedValue(undefined),
       checkRedis: vi.fn().mockResolvedValue(undefined),
     });
@@ -29,7 +29,7 @@ describe('GET /health', () => {
   });
 
   it('returns 503 and identifies an unavailable dependency', async () => {
-    const app = buildApp(config, {
+    const app = await buildApp(config, {
       checkDatabase: vi.fn().mockRejectedValue(new Error('database unavailable')),
       checkRedis: vi.fn().mockResolvedValue(undefined),
     });

@@ -9,7 +9,7 @@ import { hashSessionToken, readSessionToken } from './auth/cookies.js';
 import type { RealtimeGateway } from './realtime/gateway.js';
 import { checkHealth, type HealthDependencies } from './health.js';
 
-export const buildApp = (
+export const buildApp = async (
   config: AppConfig,
   healthDependencies: HealthDependencies,
   authDependencies?: { repository: AuthRepository; rateLimiter: AuthRateLimiter },
@@ -17,7 +17,7 @@ export const buildApp = (
   realtimeGateway?: RealtimeGateway,
 ) => {
   const app = Fastify({ logger: true });
-  void app.register(websocket);
+  await app.register(websocket);
 
   app.get('/health', async (_request, reply) => {
     const report = await checkHealth(healthDependencies);

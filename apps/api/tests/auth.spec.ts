@@ -17,7 +17,7 @@ const config: AppConfig = {
   PORT: 3000,
 };
 
-const apps: ReturnType<typeof buildApp>[] = [];
+const apps: Awaited<ReturnType<typeof buildApp>>[] = [];
 
 const createRepository = () => {
   const users = new Map<string, AuthUser>();
@@ -49,9 +49,9 @@ const createRepository = () => {
   return { repository, users, sessions };
 };
 
-const buildAuthTestApp = (allowRequest = true) => {
+const buildAuthTestApp = async (allowRequest = true) => {
   const state = createRepository();
-  const app = buildApp(
+  const app = await buildApp(
     config,
     { checkDatabase: async () => undefined, checkRedis: async () => undefined },
     { repository: state.repository, rateLimiter: { consume: async () => allowRequest } },
@@ -66,7 +66,7 @@ afterEach(async () => {
 
 describe('authentication routes', () => {
   it('registers an account, stores only a password hash, and sets an HTTP-only session cookie', async () => {
-    const { app, users } = buildAuthTestApp();
+    const { app, users } = await buildAuthTestApp();
 
     const response = await app.inject({
       method: 'POST',
@@ -83,7 +83,7 @@ describe('authentication routes', () => {
   });
 
   it('rejects invalid, duplicate, and rate-limited registrations', async () => {
-    const { app } = buildAuthTestApp();
+    const { app } = await buildAuthTestApp();
     const payload = { email: 'ada@example.com', displayName: 'Ada', password: 'secure-password-123' };
 
     expect((await app.inject({ method: 'POST', url: '/auth/register', payload: { ...payload, password: 'short' } })).statusCode).toBe(400);
@@ -92,12 +92,12 @@ describe('authentication routes', () => {
     expect(duplicate.statusCode).toBe(409);
     expect(duplicate.json()).toEqual({ error: 'An account with this email already exists' });
 
-    const limited = buildAuthTestApp(false);
+    const limited = await buildAuthTestApp(false);
     expect((await limited.app.inject({ method: 'POST', url: '/auth/register', payload })).statusCode).toBe(429);
   });
 
   it('logs in, exposes the authenticated profile, and invalidates the session on logout', async () => {
-    const { app, repository, sessions } = buildAuthTestApp();
+    const { app, repository, sessions } = await buildAuthTestApp();
     const passwordHash = await hashPassword('secure-password-123');
     await repository.createUser({ email: 'ada@example.com', displayName: 'Ada', passwordHash });
 

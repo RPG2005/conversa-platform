@@ -12,7 +12,7 @@ const database = new Pool({ connectionString: config.DATABASE_URL });
 const redis = new Redis(config.REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 1 });
 const realtimeGateway = createRealtimeGateway(redis, redis.duplicate());
 
-const app = buildApp(config, {
+const app = await buildApp(config, {
   checkDatabase: async () => {
     await database.query('SELECT 1');
   },
