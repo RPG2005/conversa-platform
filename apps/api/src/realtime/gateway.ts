@@ -1,7 +1,10 @@
 import type { Redis } from 'ioredis';
 import type { WebSocket } from 'ws';
+import type { RealtimeCommand } from './protocol.js';
 
 const channel = 'chat:realtime:events';
+const presenceTtlSeconds = 60;
+const typingTtlSeconds = 8;
 
 export interface MessageCreatedEvent {
   type: 'message.created';
@@ -14,9 +17,28 @@ export interface MessageCreatedEvent {
   };
 }
 
+export interface PresenceChangedEvent {
+  type: 'presence.changed';
+  conversationId: string;
+  userId: string;
+  online: boolean;
+  expiresAt: string | null;
+}
+
+export interface TypingChangedEvent {
+  type: 'typing.changed';
+  conversationId: string;
+  userId: string;
+  active: boolean;
+  expiresAt: string | null;
+}
+
+export type RealtimeEvent = MessageCreatedEvent | PresenceChangedEvent | TypingChangedEvent;
+
 export interface RealtimeGateway {
-  subscribe: (conversationId: string, socket: WebSocket) => Promise<() => void>;
-  publish: (event: MessageCreatedEvent) => Promise<void>;
+  subscribe: (conversationId: string, userId: string, connectionId: string, socket: WebSocket) => Promise<() => Promise<void>>;
+  handleCommand: (conversationId: string, userId: string, connectionId: string, command: RealtimeCommand) => Promise<void>;
+  publish: (event: RealtimeEvent) => Promise<void>;
   close: () => Promise<void>;
 }
 
@@ -25,7 +47,7 @@ export const createRealtimeGateway = (publisher: Redis, subscriber: Redis): Real
   let subscribed = false;
 
   subscriber.on('message', (_channel, payload) => {
-    const event = JSON.parse(payload) as MessageCreatedEvent;
+    const event = JSON.parse(payload) as RealtimeEvent;
     for (const socket of connections.get(event.conversationId) ?? []) {
       if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(event));
     }
@@ -37,19 +59,53 @@ export const createRealtimeGateway = (publisher: Redis, subscriber: Redis): Real
     subscribed = true;
   };
 
+  const presenceKey = (conversationId: string, userId: string, connectionId: string) =>
+    `chat:presence:connection:${conversationId}:${userId}:${connectionId}`;
+  const presencePattern = (conversationId: string, userId: string) =>
+    `chat:presence:connection:${conversationId}:${userId}:*`;
+  const typingKey = (conversationId: string, userId: string) => `chat:typing:${conversationId}:${userId}`;
+  const hasPresence = async (conversationId: string, userId: string) => {
+    const [nextCursor, keys] = await publisher.scan('0', 'MATCH', presencePattern(conversationId, userId), 'COUNT', 1);
+    return nextCursor !== '0' || keys.length > 0;
+  };
+  const expiry = (seconds: number) => new Date(Date.now() + seconds * 1_000).toISOString();
+  const publish = async (event: RealtimeEvent) => {
+    await publisher.publish(channel, JSON.stringify(event));
+  };
+
   return {
-    async subscribe(conversationId, socket) {
+    async subscribe(conversationId, userId, connectionId, socket) {
       await ensureSubscription();
+      const wasOnline = await hasPresence(conversationId, userId);
+      await publisher.set(presenceKey(conversationId, userId, connectionId), '1', 'EX', presenceTtlSeconds);
       const subscribers = connections.get(conversationId) ?? new Set<WebSocket>();
       subscribers.add(socket);
       connections.set(conversationId, subscribers);
-      return () => {
+      if (!wasOnline) await publish({ type: 'presence.changed', conversationId, userId, online: true, expiresAt: expiry(presenceTtlSeconds) });
+      return async () => {
         subscribers.delete(socket);
         if (subscribers.size === 0) connections.delete(conversationId);
+        await publisher.del(presenceKey(conversationId, userId, connectionId));
+        if (!(await hasPresence(conversationId, userId))) {
+          await publish({ type: 'presence.changed', conversationId, userId, online: false, expiresAt: null });
+        }
       };
     },
+    async handleCommand(conversationId, userId, connectionId, command) {
+      if (command.type === 'presence.heartbeat') {
+        await publisher.set(presenceKey(conversationId, userId, connectionId), '1', 'EX', presenceTtlSeconds);
+        return;
+      }
+      if (command.type === 'typing.started') {
+        await publisher.set(typingKey(conversationId, userId), '1', 'EX', typingTtlSeconds);
+        await publish({ type: 'typing.changed', conversationId, userId, active: true, expiresAt: expiry(typingTtlSeconds) });
+        return;
+      }
+      await publisher.del(typingKey(conversationId, userId));
+      await publish({ type: 'typing.changed', conversationId, userId, active: false, expiresAt: null });
+    },
     async publish(event) {
-      await publisher.publish(channel, JSON.stringify(event));
+      await publish(event);
     },
     async close() {
       await subscriber.unsubscribe(channel);

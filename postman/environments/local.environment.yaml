@@ -7,7 +7,6 @@ values:
     description: Se genera automáticamente en la primera petición para usar emails únicos.
   - key: test_password
     value: ''
-    disabled: true
     description: Define una contraseña local de al menos 12 caracteres antes de ejecutar la colección.
   - key: ada_session
     value: ''
@@ -24,13 +23,5 @@ values:
   - key: next_cursor
     value: ''
     disabled: true
-  - key: bob_session
-    value: ''
-  - key: eve_session
-    value: ''
-  - key: ada_session
-    value: ''
-  - key: conversation_id
-    value: ''
-  - key: next_cursor
+  - key: mallory_session
     value: ''

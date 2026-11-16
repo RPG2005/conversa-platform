@@ -1,0 +1,23 @@
+$kind: http-request
+name: Login Ada
+method: POST
+url: '{{base_url}}/auth/login'
+order: 14000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "ada+{{run_id}}@example.test",
+      "password": "{{test_password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Ada can log in after logout', () => pm.response.to.have.status(200));
+      const cookie = pm.response.headers.get('Set-Cookie');
+      const match = cookie && cookie.match(/chat_session=([^;]+)/);
+      pm.expect(match, 'session cookie').to.not.be.null;
+      pm.environment.set('ada_session', match[1]);

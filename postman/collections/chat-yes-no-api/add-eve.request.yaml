@@ -1,12 +1,10 @@
 $kind: http-request
 method: POST
-url: '{{base_url}}/conversations/{{conversation_id}}/members'
-order: 7000
+url: "{{base_url}}/conversations/{{conversation_id}}/members"
+order: 8000
 headers:
-  - key: Content-Type
-    value: application/json
-  - key: Cookie
-    value: 'chat_session={{ada_session}}'
+  Content-Type: application/json
+  Cookie: chat_session={{ada_session}}
 body:
   type: json
   content: |-
@@ -15,5 +13,4 @@ body:
     }
 scripts:
   - type: afterResponse
-    code: |-
-      pm.test('member is added', () => pm.response.to.have.status(201));
+    code: pm.test('member is added', () => pm.response.to.have.status(201));

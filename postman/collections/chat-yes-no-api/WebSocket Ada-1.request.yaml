@@ -1,0 +1,10 @@
+$kind: websocket-request
+name: WebSocket Ada
+description: ""
+url: ws://localhost:3000/ws/conversations/{{conversation_id}}
+headers:
+  Cookie: chat_session={{ada_session}}
+settings: {}
+messages: .resources/WebSocket Ada-1.resources/messages
+examples: .resources/WebSocket Ada-1.resources/examples
+order: 14000

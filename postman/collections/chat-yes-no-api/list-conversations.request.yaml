@@ -1,0 +1,16 @@
+$kind: http-request
+name: List Ada conversations
+method: GET
+url: '{{base_url}}/conversations'
+order: 6500
+headers:
+  - key: Cookie
+    value: 'chat_session={{ada_session}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Ada can list her conversations', () => pm.response.to.have.status(200));
+      pm.test('the created conversation is listed', () => {
+        const id = pm.environment.get('conversation_id');
+        pm.expect(pm.response.json().conversations.map((conversation) => conversation.id)).to.include(id);
+      });

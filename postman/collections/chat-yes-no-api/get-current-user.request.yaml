@@ -1,0 +1,13 @@
+$kind: http-request
+name: Get current user (Ada)
+method: GET
+url: '{{base_url}}/auth/me'
+order: 2500
+headers:
+  - key: Cookie
+    value: 'chat_session={{ada_session}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Ada session returns the authenticated profile', () => pm.response.to.have.status(200));
+      pm.test('profile is Ada', () => pm.expect(pm.response.json().user.email).to.equal(`ada+${pm.environment.get('run_id')}@example.test`));

@@ -7,6 +7,7 @@ import { registerConversationRoutes } from './conversations/routes.js';
 import type { ConversationRepository } from './conversations/types.js';
 import { hashSessionToken, readSessionToken } from './auth/cookies.js';
 import type { RealtimeGateway } from './realtime/gateway.js';
+import { parseRealtimeCommand } from './realtime/protocol.js';
 import { checkHealth, type HealthDependencies } from './health.js';
 
 export const buildApp = async (
@@ -35,8 +36,16 @@ export const buildApp = async (
           if (!conversationId || !token) return socket.close(1008, 'Unauthorized');
           void authDependencies.repository.findSessionUser(hashSessionToken(token)).then(async (user) => {
             if (!user || !(await conversationRepository.isMember(conversationId, user.id))) return socket.close(1008, 'Forbidden');
-            const unsubscribe = await realtimeGateway.subscribe(conversationId, socket);
-            socket.once('close', unsubscribe);
+            const connectionId = crypto.randomUUID();
+            const unsubscribe = await realtimeGateway.subscribe(conversationId, user.id, connectionId, socket);
+            socket.on('message', (payload) => {
+              const command = parseRealtimeCommand(payload.toString());
+              if (command) {
+                void realtimeGateway.handleCommand(conversationId, user.id, connectionId, command)
+                  .catch(() => socket.close(1011, 'Realtime command failed'));
+              }
+            });
+            socket.once('close', () => { void unsubscribe(); });
           }).catch(() => socket.close(1011, 'Internal error'));
         });
       }

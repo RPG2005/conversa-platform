@@ -113,6 +113,7 @@ describe('conversation routes', () => {
         markSubscribed?.();
         return () => undefined;
       },
+      handleCommand: async () => undefined,
       publish: async () => undefined,
       close: async () => undefined,
     };

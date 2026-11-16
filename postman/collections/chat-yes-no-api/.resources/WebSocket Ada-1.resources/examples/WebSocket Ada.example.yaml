@@ -1,0 +1,11 @@
+$kind: websocket-example
+request:
+  url: ws://localhost:3000/ws/conversations/{{conversation_id}}
+  headers:
+    Cookie: chat_session={{ada_session}}
+response:
+  disconnectStatus: 1000 Normal Closure
+  events:
+    - id: 7b8abafe-6970-4325-bd57-537e45ed9956
+      type: error
+order: 1000

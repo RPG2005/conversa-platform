@@ -8,3 +8,4 @@ Registra decisiones que alteren contratos, infraestructura, seguridad o el orden
 | 2026-11-12 | MVP 01 de API | Usar Fastify, `pg`, ioredis y Drizzle | API HTTP tipada, healthcheck inyectable y migraciones SQL reproducibles. |
 | 2026-11-12 | MVP 02 de identidad | Usar sesiones opacas en cookie HTTP-only y hashes `scrypt` | El cliente no recibe tokens ni hashes persistibles; Redis limita login y registro. |
 | 2026-11-12 | MVP 03 de conversaciones | Usar cursor opaco `(createdAt, id)` y devolver 404 para miembros no autorizados | La paginación es estable y las rutas no filtran la existencia de conversaciones privadas. |
+| 2026-11-16 | MVP 04 de tiempo real | Usar eventos WebSocket validados y estado efímero en Redis: presencia por conexión (TTL 60 s) y escritura por usuario (TTL 8 s) | Un cliente renueva presencia con `presence.heartbeat`; la interfaz elimina estados de escritura con `expiresAt` aunque no reciba un evento de cierre. |

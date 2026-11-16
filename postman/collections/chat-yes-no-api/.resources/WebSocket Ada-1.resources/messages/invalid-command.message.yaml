@@ -1,0 +1,3 @@
+$kind: websocket-message
+content: '{"type":"typing.started"}'
+contentType: json
