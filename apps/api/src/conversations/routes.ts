@@ -9,7 +9,10 @@ import type { AttachmentStorage } from '../storage/service.js';
 const idSchema = z.uuid();
 const createConversationSchema = z.object({ participantEmail: z.email().max(320).transform((email) => email.toLowerCase()) });
 const addMemberSchema = z.object({ email: z.email().max(320).transform((email) => email.toLowerCase()) });
-const sendMessageSchema = z.object({ content: z.string().trim().min(1).max(4_000) });
+const sendMessageSchema = z.object({
+  content: z.string().trim().min(1).max(4_000),
+  attachmentIds: z.array(z.uuid()).max(10).default([]),
+});
 const listMessagesSchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
   cursor: z.string().optional(),
@@ -100,7 +103,17 @@ export const registerConversationRoutes = (
     if (!conversationId.success || !parsed.success) return reply.code(400).send({ error: 'Invalid message data' });
     if (!(await requireConversationMember(conversationId.data, user.id, conversationRepository))) return reply.code(404).send({ error: 'Conversation not found' });
 
-    const message = await conversationRepository.createMessage({ conversationId: conversationId.data, authorId: user.id, content: parsed.data.content });
+    let message: Message;
+    try {
+      message = await conversationRepository.createMessage({
+        conversationId: conversationId.data, authorId: user.id, content: parsed.data.content, attachmentIds: parsed.data.attachmentIds,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Invalid message attachments') {
+        return reply.code(409).send({ error: 'Invalid message attachments' });
+      }
+      throw error;
+    }
     if (realtimeGateway) {
       await realtimeGateway.publish({
         type: 'message.created',

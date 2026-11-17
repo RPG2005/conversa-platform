@@ -28,7 +28,7 @@ export interface ConversationRepository {
   listConversations: (userId: string) => Promise<Conversation[]>;
   isMember: (conversationId: string, userId: string) => Promise<boolean>;
   addMember: (conversationId: string, userId: string) => Promise<boolean>;
-  createMessage: (input: { conversationId: string; authorId: string; content: string }) => Promise<Message>;
+  createMessage: (input: { conversationId: string; authorId: string; content: string; attachmentIds?: string[] }) => Promise<Message>;
   listMessages: (input: { conversationId: string; limit: number; cursor?: { createdAt: string; id: string } }) => Promise<Message[]>;
   listMessagesAfter: (input: { conversationId: string; limit: number; cursor: { createdAt: string; id: string } }) => Promise<Message[]>;
   createAttachment: (input: { conversationId: string; uploaderId: string; objectKey: string; originalName: string; contentType: string; size: number }) => Promise<Attachment>;

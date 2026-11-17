@@ -12,6 +12,12 @@ Envía un `PUT` a `{{attachment_upload_url}}` con un archivo PDF de menos de 10 
 
 Después ejecuta **Complete attachment upload**. La API consulta SeaweedFS y debe responder `200` con `attachment.status: "uploaded"`. Si el archivo real tiene otro MIME o tamaño distinto al declarado, responde `409` y no queda validado.
 
+## Asociación con un mensaje
+
+Tras completar la carga, ejecuta **Send Ada message with attachment**. Debe responder `201`; el cuerpo contiene el mensaje creado. La API asocia el adjunto al mensaje en la misma transacción que lo crea.
+
+Repite exactamente la misma petición sin volver a generar y completar otro adjunto. Debe responder `409` con `Invalid message attachments`: un adjunto ya asociado no puede reutilizarse, y el segundo mensaje no se crea.
+
 ## Descarga privada
 
 Ejecuta **Get attachment download URL** después de completar la carga. Un miembro de la conversación recibe `downloadUrl` y `expiresInSeconds: 300`; la colección guarda la URL en `attachment_download_url`.
@@ -30,7 +36,7 @@ Abre una petición temporal `GET {{attachment_download_url}}`, sin cookie ni enc
 Comprueba metadatos en PostgreSQL:
 
 ```sql
-SELECT id, conversation_id, original_name, content_type, size, status, created_at
+SELECT id, conversation_id, message_id, original_name, content_type, size, status, created_at
 FROM attachments
 ORDER BY created_at DESC;
 ```

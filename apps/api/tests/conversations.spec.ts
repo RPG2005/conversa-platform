@@ -26,6 +26,7 @@ const setup = async (realtimeGateway?: RealtimeGateway) => {
   const conversations = new Map<string, Conversation>();
   const members = new Map<string, Set<string>>();
   const messages: Message[] = [];
+  const messageInputs: Array<{ conversationId: string; authorId: string; content: string; attachmentIds?: string[] }> = [];
   let conversationSequence = 10;
   let messageSequence = 100;
 
@@ -46,7 +47,9 @@ const setup = async (realtimeGateway?: RealtimeGateway) => {
     addMember: async (conversationId, userId) => {
       const group = members.get(conversationId); if (!group || group.has(userId)) return false; group.add(userId); return true;
     },
-    createMessage: async ({ conversationId, authorId, content }) => {
+    createMessage: async ({ conversationId, authorId, content, attachmentIds }) => {
+      if (attachmentIds?.includes('00000000-0000-4000-8000-000000000999')) throw new Error('Invalid message attachments');
+      messageInputs.push({ conversationId, authorId, content, attachmentIds });
       const message = { id: `00000000-0000-4000-8000-${String(++messageSequence).padStart(12, '0')}`, conversationId, authorId, content, createdAt: new Date() };
       messages.push(message); return message;
     },
@@ -64,7 +67,7 @@ const setup = async (realtimeGateway?: RealtimeGateway) => {
   const app = await buildApp(config, { checkDatabase: async () => undefined, checkRedis: async () => undefined }, { repository: authRepository, rateLimiter: { consume: async () => true } }, conversationRepository, realtimeGateway);
   apps.push(app);
   const cookie = (name: string) => `${sessionCookieName}=${name}-token`;
-  return { app, cookie };
+  return { app, cookie, messageInputs };
 };
 
 const openSocket = (url: string, cookie: string) => new Promise<WebSocket>((resolve, reject) => {
@@ -115,6 +118,27 @@ describe('conversation routes', () => {
     expect(sync.statusCode).toBe(200);
     expect(sync.json().messages.map((message: { content: string }) => message.content)).toEqual(['second']);
     expect(sync.json().syncCursor).toEqual(expect.any(String));
+  });
+
+  it('passes uploaded attachment ids to the message transaction and rejects invalid attachments', async () => {
+    const { app, cookie, messageInputs } = await setup();
+    const created = await app.inject({ method: 'POST', url: '/conversations', headers: { cookie: cookie('ada') }, payload: { participantEmail: 'bob@example.com' } });
+    const conversationId = created.json().conversation.id as string;
+    const attachmentId = '00000000-0000-4000-8000-000000000900';
+
+    const sent = await app.inject({
+      method: 'POST', url: `/conversations/${conversationId}/messages`, headers: { cookie: cookie('ada') },
+      payload: { content: 'With a PDF', attachmentIds: [attachmentId] },
+    });
+    expect(sent.statusCode).toBe(201);
+    expect(messageInputs).toContainEqual(expect.objectContaining({ conversationId, attachmentIds: [attachmentId] }));
+
+    const rejected = await app.inject({
+      method: 'POST', url: `/conversations/${conversationId}/messages`, headers: { cookie: cookie('ada') },
+      payload: { content: 'Invalid attachment', attachmentIds: ['00000000-0000-4000-8000-000000000999'] },
+    });
+    expect(rejected.statusCode).toBe(409);
+    expect(rejected.json()).toEqual({ error: 'Invalid message attachments' });
   });
 
   it('upgrades authorized members to WebSocket and closes unauthorized users', async () => {

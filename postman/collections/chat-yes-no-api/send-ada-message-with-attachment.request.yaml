@@ -1,0 +1,16 @@
+$kind: http-request
+name: Send Ada message with attachment
+method: POST
+url: '{{base_url}}/conversations/{{conversation_id}}/messages'
+order: 10800
+headers:
+  Content-Type: application/json
+  Cookie: chat_session={{ada_session}}
+body:
+  type: json
+  content: '{"content":"PDF attached","attachmentIds":["{{attachment_id}}"]}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('the uploaded attachment is associated with the message', () => pm.response.to.have.status(201));
+      pm.expect(pm.response.json().message.content).to.equal('PDF attached');

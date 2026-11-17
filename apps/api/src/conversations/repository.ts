@@ -81,6 +81,16 @@ export const createConversationRepository = (database: Pool): ConversationReposi
         'INSERT INTO messages (conversation_id, author_id, content) VALUES ($1, $2, $3) RETURNING id, conversation_id, author_id, content, created_at',
         [input.conversationId, input.authorId, input.content],
       );
+      if (input.attachmentIds?.length) {
+        const attached = await client.query<{ id: string }>(
+          `UPDATE attachments SET message_id = $1
+           WHERE id = ANY($2::uuid[]) AND conversation_id = $3 AND uploader_id = $4
+             AND status = 'uploaded' AND message_id IS NULL
+           RETURNING id`,
+          [result.rows[0].id, input.attachmentIds, input.conversationId, input.authorId],
+        );
+        if (attached.rowCount !== input.attachmentIds.length) throw new Error('Invalid message attachments');
+      }
       await client.query('UPDATE conversations SET updated_at = NOW() WHERE id = $1', [input.conversationId]);
       await client.query('COMMIT');
       return toMessage(result.rows[0]);
