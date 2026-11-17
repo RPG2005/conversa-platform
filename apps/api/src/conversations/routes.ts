@@ -5,6 +5,7 @@ import type { AuthRepository } from '../auth/types.js';
 import type { ConversationRepository, Message } from './types.js';
 import type { RealtimeGateway } from '../realtime/gateway.js';
 import type { AttachmentStorage } from '../storage/service.js';
+import type { NotificationQueue } from '../notifications/queue.js';
 
 const idSchema = z.uuid();
 const createConversationSchema = z.object({ participantEmail: z.email().max(320).transform((email) => email.toLowerCase()) });
@@ -68,6 +69,7 @@ export const registerConversationRoutes = (
   conversationRepository: ConversationRepository,
   realtimeGateway?: RealtimeGateway,
   attachmentStorage?: AttachmentStorage,
+  notificationQueue?: NotificationQueue,
 ) => {
   app.post('/conversations', async (request, reply) => {
     const user = await requireSession(request, reply, authRepository);
@@ -131,6 +133,19 @@ export const registerConversationRoutes = (
           createdAt: message.createdAt.toISOString(),
         },
       });
+    }
+    if (notificationQueue) {
+      try {
+        await notificationQueue.enqueue({
+          eventId: `message.created:${message.id}`,
+          conversationId: message.conversationId,
+          messageId: message.id,
+          authorId: message.authorId,
+          createdAt: message.createdAt.toISOString(),
+        });
+      } catch (error) {
+        request.log.error(error, 'Unable to enqueue notification');
+      }
     }
     return reply.code(201).send({ message: toMessageDto(message) });
   });
