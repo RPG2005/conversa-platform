@@ -1,0 +1,16 @@
+$kind: http-request
+name: Upload attachment binary
+method: PUT
+url: '{{attachment_upload_url}}'
+order: 10600
+headers:
+  - key: Content-Type
+    value: application/pdf
+body:
+  type: file
+  content:
+    src: '{{attachment_file_path}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('SeaweedFS accepts the signed upload', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));

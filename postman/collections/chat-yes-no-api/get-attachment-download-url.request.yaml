@@ -1,0 +1,16 @@
+$kind: http-request
+name: Get attachment download URL
+method: GET
+url: '{{base_url}}/conversations/{{conversation_id}}/attachments/{{attachment_id}}/download-url'
+order: 10800
+headers:
+  - key: Cookie
+    value: 'chat_session={{ada_session}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('a conversation member receives a signed download URL', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.expect(body.downloadUrl).to.be.a('string');
+      pm.expect(body.expiresInSeconds).to.equal(300);
+      pm.environment.set('attachment_download_url', body.downloadUrl);

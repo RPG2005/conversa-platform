@@ -5,12 +5,14 @@ import { createAuthRateLimiter } from './auth/rate-limit.js';
 import { createAuthRepository } from './auth/repository.js';
 import { createConversationRepository } from './conversations/repository.js';
 import { createRealtimeGateway } from './realtime/gateway.js';
+import { createAttachmentStorage } from './storage/service.js';
 import { loadConfig } from './config.js';
 
 const config = loadConfig();
 const database = new Pool({ connectionString: config.DATABASE_URL });
 const redis = new Redis(config.REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 1 });
 const realtimeGateway = createRealtimeGateway(redis, redis.duplicate());
+const attachmentStorage = createAttachmentStorage(config);
 
 const app = await buildApp(config, {
   checkDatabase: async () => {
@@ -23,7 +25,7 @@ const app = await buildApp(config, {
 }, {
   repository: createAuthRepository(database),
   rateLimiter: createAuthRateLimiter(redis, config.AUTH_RATE_LIMIT, config.AUTH_RATE_LIMIT_WINDOW_SECONDS),
-}, createConversationRepository(database), realtimeGateway);
+}, createConversationRepository(database), realtimeGateway, attachmentStorage);
 
 const shutdown = async () => {
   await app.close();

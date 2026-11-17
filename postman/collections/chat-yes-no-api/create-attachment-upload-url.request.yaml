@@ -1,0 +1,27 @@
+$kind: http-request
+name: Create attachment upload URL
+method: POST
+url: '{{base_url}}/conversations/{{conversation_id}}/attachments/upload-url'
+order: 10500
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Cookie
+    value: 'chat_session={{ada_session}}'
+body:
+  type: json
+  content: |-
+    {
+      "fileName": "sample.pdf",
+      "contentType": "application/pdf",
+      "size": 1024
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('an authorized member receives a signed upload URL', () => pm.response.to.have.status(201));
+      const body = pm.response.json();
+      pm.expect(body.uploadUrl).to.be.a('string');
+      pm.expect(body.expiresInSeconds).to.equal(300);
+      pm.environment.set('attachment_id', body.attachment.id);
+      pm.environment.set('attachment_upload_url', body.uploadUrl);

@@ -8,6 +8,7 @@ import type { ConversationRepository } from './conversations/types.js';
 import { hashSessionToken, readSessionToken } from './auth/cookies.js';
 import type { RealtimeGateway } from './realtime/gateway.js';
 import { parseRealtimeCommand } from './realtime/protocol.js';
+import type { AttachmentStorage } from './storage/service.js';
 import { checkHealth, type HealthDependencies } from './health.js';
 
 export const buildApp = async (
@@ -16,6 +17,7 @@ export const buildApp = async (
   authDependencies?: { repository: AuthRepository; rateLimiter: AuthRateLimiter },
   conversationRepository?: ConversationRepository,
   realtimeGateway?: RealtimeGateway,
+  attachmentStorage?: AttachmentStorage,
 ) => {
   const app = Fastify({ logger: true });
   await app.register(websocket);
@@ -28,7 +30,7 @@ export const buildApp = async (
   if (authDependencies) {
     registerAuthRoutes(app, config, authDependencies.repository, authDependencies.rateLimiter);
     if (conversationRepository) {
-      registerConversationRoutes(app, authDependencies.repository, conversationRepository, realtimeGateway);
+      registerConversationRoutes(app, authDependencies.repository, conversationRepository, realtimeGateway, attachmentStorage);
       if (realtimeGateway) {
         app.get('/ws/conversations/:conversationId', { websocket: true }, (socket, request) => {
           const conversationId = (request.params as { conversationId?: string }).conversationId;

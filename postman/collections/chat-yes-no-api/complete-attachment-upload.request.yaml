@@ -1,0 +1,13 @@
+$kind: http-request
+name: Complete attachment upload
+method: POST
+url: '{{base_url}}/conversations/{{conversation_id}}/attachments/{{attachment_id}}/complete'
+order: 10700
+headers:
+  - key: Cookie
+    value: 'chat_session={{ada_session}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('the uploaded file matches its metadata', () => pm.response.to.have.status(200));
+      pm.expect(pm.response.json().attachment.status).to.equal('uploaded');

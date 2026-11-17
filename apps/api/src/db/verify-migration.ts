@@ -5,7 +5,7 @@ const config = loadConfig();
 const pool = new Pool({ connectionString: config.DATABASE_URL });
 
 try {
-  const expectedTables = ['users', 'sessions', 'conversations', 'conversation_members', 'messages'];
+  const expectedTables = ['users', 'sessions', 'conversations', 'conversation_members', 'messages', 'attachments'];
   const result = await pool.query<{ table_name: string }>(
     "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = ANY($1)",
     [expectedTables],

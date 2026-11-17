@@ -22,3 +22,12 @@ values:
     value: ''
   - key: mallory_session
     value: ''
+  - key: attachment_id
+    value: ''
+  - key: attachment_upload_url
+    value: ''
+  - key: attachment_download_url
+    value: ''
+  - key: attachment_file_path
+    value: ''
+    description: 'Ruta absoluta al PDF, PNG, JPEG o WebP local que se cargará.'

@@ -1,5 +1,5 @@
 import type { Pool } from 'pg';
-import type { Conversation, ConversationRepository, Message } from './types.js';
+import type { Attachment, Conversation, ConversationRepository, Message } from './types.js';
 
 const toConversation = (row: Record<string, unknown>): Conversation => ({
   id: row.id as string,
@@ -13,6 +13,11 @@ const toMessage = (row: Record<string, unknown>): Message => ({
   authorId: row.author_id as string,
   content: row.content as string,
   createdAt: row.created_at as Date,
+});
+
+const toAttachment = (row: Record<string, unknown>): Attachment => ({
+  id: row.id as string, objectKey: row.object_key as string, originalName: row.original_name as string,
+  contentType: row.content_type as string, size: row.size as number, status: row.status as string, createdAt: row.created_at as Date,
 });
 
 export const createConversationRepository = (database: Pool): ConversationRepository => ({
@@ -115,5 +120,34 @@ export const createConversationRepository = (database: Pool): ConversationReposi
       [conversationId, cursor.createdAt, cursor.id, limit],
     );
     return result.rows.map(toMessage);
+  },
+  async createAttachment(input) {
+    const result = await database.query(
+      `INSERT INTO attachments (conversation_id, uploader_id, object_key, original_name, content_type, size)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, object_key, original_name, content_type, size, status, created_at`,
+      [input.conversationId, input.uploaderId, input.objectKey, input.originalName, input.contentType, input.size],
+    );
+    return toAttachment(result.rows[0]);
+  },
+  async findAttachment(attachmentId, conversationId, uploaderId) {
+    const result = await database.query(
+      `SELECT id, object_key, original_name, content_type, size, status, created_at FROM attachments
+       WHERE id = $1 AND conversation_id = $2 AND uploader_id = $3`, [attachmentId, conversationId, uploaderId],
+    );
+    return result.rows[0] ? toAttachment(result.rows[0]) : null;
+  },
+  async markAttachmentUploaded(attachmentId) {
+    const result = await database.query(
+      `UPDATE attachments SET status = 'uploaded' WHERE id = $1 RETURNING id, object_key, original_name, content_type, size, status, created_at`, [attachmentId],
+    );
+    return toAttachment(result.rows[0]);
+  },
+  async findUploadedAttachment(attachmentId, conversationId) {
+    const result = await database.query(
+      `SELECT id, object_key, original_name, content_type, size, status, created_at FROM attachments
+       WHERE id = $1 AND conversation_id = $2 AND status = 'uploaded'`, [attachmentId, conversationId],
+    );
+    return result.rows[0] ? toAttachment(result.rows[0]) : null;
   },
 });

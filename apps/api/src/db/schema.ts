@@ -1,4 +1,4 @@
-import { index, pgTable, primaryKey, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, integer, pgTable, primaryKey, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -57,3 +57,16 @@ export const messages = pgTable(
   },
   (table) => [index('messages_conversation_created_at_id_idx').on(table.conversationId, table.createdAt, table.id)],
 );
+
+export const attachments = pgTable('attachments', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  conversationId: uuid('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
+  messageId: uuid('message_id').references(() => messages.id, { onDelete: 'set null' }),
+  uploaderId: uuid('uploader_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  objectKey: varchar('object_key', { length: 512 }).notNull().unique(),
+  originalName: varchar('original_name', { length: 255 }).notNull(),
+  contentType: varchar('content_type', { length: 100 }).notNull(),
+  size: integer('size').notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index('attachments_conversation_id_idx').on(table.conversationId)]);

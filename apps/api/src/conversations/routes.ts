@@ -4,6 +4,7 @@ import { requireSession } from '../auth/routes.js';
 import type { AuthRepository } from '../auth/types.js';
 import type { ConversationRepository, Message } from './types.js';
 import type { RealtimeGateway } from '../realtime/gateway.js';
+import type { AttachmentStorage } from '../storage/service.js';
 
 const idSchema = z.uuid();
 const createConversationSchema = z.object({ participantEmail: z.email().max(320).transform((email) => email.toLowerCase()) });
@@ -13,6 +14,11 @@ const listMessagesSchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
   cursor: z.string().optional(),
   after: z.string().optional(),
+});
+const createAttachmentSchema = z.object({
+  fileName: z.string().trim().min(1).max(255),
+  contentType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']),
+  size: z.number().int().positive().max(10 * 1024 * 1024),
 });
 
 const toConversationDto = (conversation: { id: string; createdAt: Date; updatedAt: Date }) => ({
@@ -51,6 +57,7 @@ export const registerConversationRoutes = (
   authRepository: AuthRepository,
   conversationRepository: ConversationRepository,
   realtimeGateway?: RealtimeGateway,
+  attachmentStorage?: AttachmentStorage,
 ) => {
   app.post('/conversations', async (request, reply) => {
     const user = await requireSession(request, reply, authRepository);
@@ -103,6 +110,59 @@ export const registerConversationRoutes = (
     }
     return reply.code(201).send({ message: toMessageDto(message) });
   });
+
+  if (attachmentStorage) {
+    app.post('/conversations/:conversationId/attachments/upload-url', async (request, reply) => {
+      const user = await requireSession(request, reply, authRepository);
+      if (!user || 'statusCode' in user) return;
+      const conversationId = idSchema.safeParse((request.params as { conversationId?: string }).conversationId);
+      const parsed = createAttachmentSchema.safeParse(request.body);
+      if (!conversationId.success || !parsed.success) return reply.code(400).send({ error: 'Invalid attachment data' });
+      if (!(await requireConversationMember(conversationId.data, user.id, conversationRepository))) return reply.code(404).send({ error: 'Conversation not found' });
+      const safeName = parsed.data.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const objectKey = `conversations/${conversationId.data}/${crypto.randomUUID()}-${safeName}`;
+      const attachment = await conversationRepository.createAttachment({
+        conversationId: conversationId.data, uploaderId: user.id, objectKey, originalName: parsed.data.fileName,
+        contentType: parsed.data.contentType, size: parsed.data.size,
+      });
+      const uploadUrl = await attachmentStorage.createUploadUrl(objectKey, parsed.data.contentType);
+      return reply.code(201).send({ attachment: { ...attachment, createdAt: attachment.createdAt.toISOString() }, uploadUrl, expiresInSeconds: 300 });
+    });
+
+    app.post('/conversations/:conversationId/attachments/:attachmentId/complete', async (request, reply) => {
+      const user = await requireSession(request, reply, authRepository);
+      if (!user || 'statusCode' in user) return;
+      const conversationId = idSchema.safeParse((request.params as { conversationId?: string }).conversationId);
+      const attachmentId = idSchema.safeParse((request.params as { attachmentId?: string }).attachmentId);
+      if (!conversationId.success || !attachmentId.success) return reply.code(400).send({ error: 'Invalid attachment id' });
+      if (!(await requireConversationMember(conversationId.data, user.id, conversationRepository))) return reply.code(404).send({ error: 'Conversation not found' });
+      const attachment = await conversationRepository.findAttachment(attachmentId.data, conversationId.data, user.id);
+      if (!attachment) return reply.code(404).send({ error: 'Attachment not found' });
+      if (attachment.status === 'uploaded') return reply.send({ attachment: { ...attachment, createdAt: attachment.createdAt.toISOString() } });
+      try {
+        const object = await attachmentStorage.inspectObject(attachment.objectKey);
+        if (object.size !== attachment.size || object.contentType !== attachment.contentType) {
+          return reply.code(409).send({ error: 'Uploaded file does not match attachment metadata' });
+        }
+      } catch {
+        return reply.code(409).send({ error: 'Uploaded file was not found' });
+      }
+      const completed = await conversationRepository.markAttachmentUploaded(attachment.id);
+      return reply.send({ attachment: { ...completed, createdAt: completed.createdAt.toISOString() } });
+    });
+
+    app.get('/conversations/:conversationId/attachments/:attachmentId/download-url', async (request, reply) => {
+      const user = await requireSession(request, reply, authRepository);
+      if (!user || 'statusCode' in user) return;
+      const conversationId = idSchema.safeParse((request.params as { conversationId?: string }).conversationId);
+      const attachmentId = idSchema.safeParse((request.params as { attachmentId?: string }).attachmentId);
+      if (!conversationId.success || !attachmentId.success) return reply.code(400).send({ error: 'Invalid attachment id' });
+      if (!(await requireConversationMember(conversationId.data, user.id, conversationRepository))) return reply.code(404).send({ error: 'Conversation not found' });
+      const attachment = await conversationRepository.findUploadedAttachment(attachmentId.data, conversationId.data);
+      if (!attachment) return reply.code(404).send({ error: 'Attachment not found' });
+      return reply.send({ downloadUrl: await attachmentStorage.createDownloadUrl(attachment.objectKey), expiresInSeconds: 300 });
+    });
+  }
 
   app.get('/conversations/:conversationId/messages', async (request, reply) => {
     const user = await requireSession(request, reply, authRepository);
