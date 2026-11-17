@@ -50,7 +50,13 @@ const setup = async (realtimeGateway?: RealtimeGateway) => {
     createMessage: async ({ conversationId, authorId, content, attachmentIds }) => {
       if (attachmentIds?.includes('00000000-0000-4000-8000-000000000999')) throw new Error('Invalid message attachments');
       messageInputs.push({ conversationId, authorId, content, attachmentIds });
-      const message = { id: `00000000-0000-4000-8000-${String(++messageSequence).padStart(12, '0')}`, conversationId, authorId, content, createdAt: new Date() };
+      const createdAt = new Date();
+      const message = {
+        id: `00000000-0000-4000-8000-${String(++messageSequence).padStart(12, '0')}`,
+        conversationId, authorId, content,
+        attachments: (attachmentIds ?? []).map((id) => ({ id, originalName: 'sample.pdf', contentType: 'application/pdf', size: 1_024, createdAt })),
+        createdAt,
+      };
       messages.push(message); return message;
     },
     listMessages: async ({ conversationId, limit, cursor }) => messages
@@ -132,6 +138,7 @@ describe('conversation routes', () => {
     });
     expect(sent.statusCode).toBe(201);
     expect(messageInputs).toContainEqual(expect.objectContaining({ conversationId, attachmentIds: [attachmentId] }));
+    expect(sent.json().message.attachments).toEqual([expect.objectContaining({ id: attachmentId, originalName: 'sample.pdf' })]);
 
     const rejected = await app.inject({
       method: 'POST', url: `/conversations/${conversationId}/messages`, headers: { cookie: cookie('ada') },

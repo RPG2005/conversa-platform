@@ -9,6 +9,15 @@ export interface Message {
   conversationId: string;
   authorId: string;
   content: string;
+  attachments: MessageAttachment[];
+  createdAt: Date;
+}
+
+export interface MessageAttachment {
+  id: string;
+  originalName: string;
+  contentType: string;
+  size: number;
   createdAt: Date;
 }
 

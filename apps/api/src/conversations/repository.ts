@@ -1,5 +1,5 @@
 import type { Pool } from 'pg';
-import type { Attachment, Conversation, ConversationRepository, Message } from './types.js';
+import type { Attachment, Conversation, ConversationRepository, Message, MessageAttachment } from './types.js';
 
 const toConversation = (row: Record<string, unknown>): Conversation => ({
   id: row.id as string,
@@ -12,6 +12,15 @@ const toMessage = (row: Record<string, unknown>): Message => ({
   conversationId: row.conversation_id as string,
   authorId: row.author_id as string,
   content: row.content as string,
+  attachments: [],
+  createdAt: row.created_at as Date,
+});
+
+const toMessageAttachment = (row: Record<string, unknown>): MessageAttachment => ({
+  id: row.id as string,
+  originalName: row.original_name as string,
+  contentType: row.content_type as string,
+  size: row.size as number,
   createdAt: row.created_at as Date,
 });
 
@@ -19,6 +28,23 @@ const toAttachment = (row: Record<string, unknown>): Attachment => ({
   id: row.id as string, objectKey: row.object_key as string, originalName: row.original_name as string,
   contentType: row.content_type as string, size: row.size as number, status: row.status as string, createdAt: row.created_at as Date,
 });
+
+const withMessageAttachments = async (database: Pool, messages: Message[]) => {
+  if (!messages.length) return messages;
+  const result = await database.query<Record<string, unknown>>(
+    `SELECT message_id, id, original_name, content_type, size, created_at
+     FROM attachments WHERE message_id = ANY($1::uuid[]) AND status = 'uploaded'
+     ORDER BY created_at ASC, id ASC`,
+    [messages.map((message) => message.id)],
+  );
+  const grouped = new Map<string, MessageAttachment[]>();
+  for (const row of result.rows) {
+    const items = grouped.get(row.message_id as string) ?? [];
+    items.push(toMessageAttachment(row));
+    grouped.set(row.message_id as string, items);
+  }
+  return messages.map((message) => ({ ...message, attachments: grouped.get(message.id) ?? [] }));
+};
 
 export const createConversationRepository = (database: Pool): ConversationRepository => ({
   async findUserIdByEmail(email) {
@@ -82,14 +108,19 @@ export const createConversationRepository = (database: Pool): ConversationReposi
         [input.conversationId, input.authorId, input.content],
       );
       if (input.attachmentIds?.length) {
-        const attached = await client.query<{ id: string }>(
+        const attached = await client.query<Record<string, unknown>>(
           `UPDATE attachments SET message_id = $1
            WHERE id = ANY($2::uuid[]) AND conversation_id = $3 AND uploader_id = $4
              AND status = 'uploaded' AND message_id IS NULL
-           RETURNING id`,
+           RETURNING id, original_name, content_type, size, created_at`,
           [result.rows[0].id, input.attachmentIds, input.conversationId, input.authorId],
         );
         if (attached.rowCount !== input.attachmentIds.length) throw new Error('Invalid message attachments');
+        const message = toMessage(result.rows[0]);
+        message.attachments = attached.rows.map(toMessageAttachment);
+        await client.query('UPDATE conversations SET updated_at = NOW() WHERE id = $1', [input.conversationId]);
+        await client.query('COMMIT');
+        return message;
       }
       await client.query('UPDATE conversations SET updated_at = NOW() WHERE id = $1', [input.conversationId]);
       await client.query('COMMIT');
@@ -118,7 +149,7 @@ export const createConversationRepository = (database: Pool): ConversationReposi
        LIMIT $${parameters.length}`,
       parameters,
     );
-    return result.rows.map(toMessage);
+    return withMessageAttachments(database, result.rows.map(toMessage));
   },
   async listMessagesAfter({ conversationId, limit, cursor }) {
     const result = await database.query(
@@ -129,7 +160,7 @@ export const createConversationRepository = (database: Pool): ConversationReposi
        LIMIT $4`,
       [conversationId, cursor.createdAt, cursor.id, limit],
     );
-    return result.rows.map(toMessage);
+    return withMessageAttachments(database, result.rows.map(toMessage));
   },
   async createAttachment(input) {
     const result = await database.query(

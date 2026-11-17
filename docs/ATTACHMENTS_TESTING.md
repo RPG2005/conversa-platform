@@ -14,7 +14,7 @@ Después ejecuta **Complete attachment upload**. La API consulta SeaweedFS y deb
 
 ## Asociación con un mensaje
 
-Tras completar la carga, ejecuta **Send Ada message with attachment**. Debe responder `201`; el cuerpo contiene el mensaje creado. La API asocia el adjunto al mensaje en la misma transacción que lo crea.
+Tras completar la carga, ejecuta **Send Ada message with attachment**. Debe responder `201`; el cuerpo contiene el mensaje creado y `message.attachments` con sus metadatos. La API asocia el adjunto al mensaje en la misma transacción que lo crea.
 
 Repite exactamente la misma petición sin volver a generar y completar otro adjunto. Debe responder `409` con `Invalid message attachments`: un adjunto ya asociado no puede reutilizarse, y el segundo mensaje no se crea.
 

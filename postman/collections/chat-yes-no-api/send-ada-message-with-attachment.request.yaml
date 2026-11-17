@@ -14,3 +14,4 @@ scripts:
     code: |-
       pm.test('the uploaded attachment is associated with the message', () => pm.response.to.have.status(201));
       pm.expect(pm.response.json().message.content).to.equal('PDF attached');
+      pm.expect(pm.response.json().message.attachments).to.have.length(1);

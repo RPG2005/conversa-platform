@@ -13,6 +13,13 @@ export interface MessageCreatedEvent {
     id: string;
     authorId: string;
     content: string;
+    attachments: Array<{
+      id: string;
+      originalName: string;
+      contentType: string;
+      size: number;
+      createdAt: string;
+    }>;
     createdAt: string;
   };
 }

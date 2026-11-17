@@ -35,6 +35,13 @@ const toMessageDto = (message: Message) => ({
   conversationId: message.conversationId,
   authorId: message.authorId,
   content: message.content,
+  attachments: message.attachments.map((attachment) => ({
+    id: attachment.id,
+    originalName: attachment.originalName,
+    contentType: attachment.contentType,
+    size: attachment.size,
+    createdAt: attachment.createdAt.toISOString(),
+  })),
   createdAt: message.createdAt.toISOString(),
 });
 
@@ -118,7 +125,11 @@ export const registerConversationRoutes = (
       await realtimeGateway.publish({
         type: 'message.created',
         conversationId: conversationId.data,
-        message: { id: message.id, authorId: message.authorId, content: message.content, createdAt: message.createdAt.toISOString() },
+        message: {
+          id: message.id, authorId: message.authorId, content: message.content,
+          attachments: toMessageDto(message).attachments,
+          createdAt: message.createdAt.toISOString(),
+        },
       });
     }
     return reply.code(201).send({ message: toMessageDto(message) });
