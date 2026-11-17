@@ -1,7 +1,7 @@
 $kind: http-request
 method: POST
 url: '{{base_url}}/auth/register'
-order: 3000
+order: 4000
 headers:
   - key: Content-Type
     value: application/json

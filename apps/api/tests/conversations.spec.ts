@@ -55,6 +55,11 @@ const setup = async (realtimeGateway?: RealtimeGateway) => {
       .filter((message) => !cursor || `${message.createdAt.toISOString()}-${message.id}` < `${cursor.createdAt}-${cursor.id}`)
       .sort((left, right) => `${right.createdAt.toISOString()}-${right.id}`.localeCompare(`${left.createdAt.toISOString()}-${left.id}`))
       .slice(0, limit),
+    listMessagesAfter: async ({ conversationId, limit, cursor }) => messages
+      .filter((message) => message.conversationId === conversationId)
+      .filter((message) => `${message.createdAt.toISOString()}-${message.id}` > `${cursor.createdAt}-${cursor.id}`)
+      .sort((left, right) => `${left.createdAt.toISOString()}-${left.id}`.localeCompare(`${right.createdAt.toISOString()}-${right.id}`))
+      .slice(0, limit),
   };
   const app = await buildApp(config, { checkDatabase: async () => undefined, checkRedis: async () => undefined }, { repository: authRepository, rateLimiter: { consume: async () => true } }, conversationRepository, realtimeGateway);
   apps.push(app);
@@ -101,6 +106,15 @@ describe('conversation routes', () => {
     expect(firstPage.json().nextCursor).toEqual(expect.any(String));
     const secondPage = await app.inject({ method: 'GET', url: `/conversations/${conversationId}/messages?limit=1&cursor=${firstPage.json().nextCursor}`, headers: { cookie: cookie('eve') } });
     expect(secondPage.json().messages[0].content).toBe('first');
+
+    const oldestCursor = Buffer.from(JSON.stringify({
+      createdAt: secondPage.json().messages[0].createdAt,
+      id: secondPage.json().messages[0].id,
+    })).toString('base64url');
+    const sync = await app.inject({ method: 'GET', url: `/conversations/${conversationId}/messages?after=${oldestCursor}`, headers: { cookie: cookie('eve') } });
+    expect(sync.statusCode).toBe(200);
+    expect(sync.json().messages.map((message: { content: string }) => message.content)).toEqual(['second']);
+    expect(sync.json().syncCursor).toEqual(expect.any(String));
   });
 
   it('upgrades authorized members to WebSocket and closes unauthorized users', async () => {

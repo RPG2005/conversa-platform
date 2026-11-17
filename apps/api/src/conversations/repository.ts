@@ -105,4 +105,15 @@ export const createConversationRepository = (database: Pool): ConversationReposi
     );
     return result.rows.map(toMessage);
   },
+  async listMessagesAfter({ conversationId, limit, cursor }) {
+    const result = await database.query(
+      `SELECT id, conversation_id, author_id, content, created_at
+       FROM messages
+       WHERE conversation_id = $1 AND (created_at, id) > ($2::timestamptz, $3::uuid)
+       ORDER BY created_at ASC, id ASC
+       LIMIT $4`,
+      [conversationId, cursor.createdAt, cursor.id, limit],
+    );
+    return result.rows.map(toMessage);
+  },
 });

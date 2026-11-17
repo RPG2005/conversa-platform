@@ -1,7 +1,7 @@
 $kind: http-request
 method: GET
 url: '{{base_url}}/conversations/{{conversation_id}}/messages?limit=1'
-order: 7000
+order: 9000
 queryParams:
   - key: limit
     value: '1'

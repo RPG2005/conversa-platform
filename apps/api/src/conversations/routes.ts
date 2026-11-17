@@ -12,6 +12,7 @@ const sendMessageSchema = z.object({ content: z.string().trim().min(1).max(4_000
 const listMessagesSchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
   cursor: z.string().optional(),
+  after: z.string().optional(),
 });
 
 const toConversationDto = (conversation: { id: string; createdAt: Date; updatedAt: Date }) => ({
@@ -109,10 +110,26 @@ export const registerConversationRoutes = (
     const conversationId = idSchema.safeParse((request.params as { conversationId?: string }).conversationId);
     const query = listMessagesSchema.safeParse(request.query);
     if (!conversationId.success || !query.success) return reply.code(400).send({ error: 'Invalid message query' });
+    if (query.data.cursor && query.data.after) return reply.code(400).send({ error: 'Use either cursor or after' });
     if (!(await requireConversationMember(conversationId.data, user.id, conversationRepository))) return reply.code(404).send({ error: 'Conversation not found' });
 
     const cursor = query.data.cursor ? decodeCursor(query.data.cursor) : undefined;
+    const after = query.data.after ? decodeCursor(query.data.after) : undefined;
     if (query.data.cursor && !cursor) return reply.code(400).send({ error: 'Invalid message cursor' });
+    if (query.data.after && !after) return reply.code(400).send({ error: 'Invalid message cursor' });
+    if (after) {
+      const messages = await conversationRepository.listMessagesAfter({
+        conversationId: conversationId.data,
+        limit: query.data.limit,
+        cursor: after,
+      });
+      const lastMessage = messages.at(-1);
+      return reply.send({
+        messages: messages.map(toMessageDto),
+        syncCursor: lastMessage ? encodeCursor(lastMessage) : query.data.after,
+        nextAfterCursor: messages.length === query.data.limit && lastMessage ? encodeCursor(lastMessage) : null,
+      });
+    }
     const messages = await conversationRepository.listMessages({
       conversationId: conversationId.data,
       limit: query.data.limit,

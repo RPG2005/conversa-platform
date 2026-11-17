@@ -2,7 +2,7 @@ $kind: http-request
 name: List Ada conversations
 method: GET
 url: '{{base_url}}/conversations'
-order: 6500
+order: 8000
 headers:
   - key: Cookie
     value: 'chat_session={{ada_session}}'

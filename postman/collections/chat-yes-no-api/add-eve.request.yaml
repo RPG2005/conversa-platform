@@ -1,7 +1,7 @@
 $kind: http-request
 method: POST
 url: "{{base_url}}/conversations/{{conversation_id}}/members"
-order: 8000
+order: 10000
 headers:
   Content-Type: application/json
   Cookie: chat_session={{ada_session}}

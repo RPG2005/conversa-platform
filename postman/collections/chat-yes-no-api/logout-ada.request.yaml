@@ -1,7 +1,7 @@
 $kind: http-request
 method: POST
 url: '{{base_url}}/auth/logout'
-order: 13000
+order: 16000
 headers:
   - key: Cookie
     value: 'chat_session={{ada_session}}'

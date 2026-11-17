@@ -5,5 +5,5 @@ url: ws://localhost:3000/ws/conversations/{{conversation_id}}
 headers:
   Cookie: chat_session={{bob_session}}
 settings: {}
-messages: .resources/WebSocket Bob.resources/messages
-order: 15000
+messages: .resources/WebSocket Bob-1.resources/messages
+order: 19422

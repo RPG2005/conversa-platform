@@ -10,18 +10,15 @@ values:
     description: Define una contraseña local de al menos 12 caracteres antes de ejecutar la colección.
   - key: ada_session
     value: ''
-    disabled: true
   - key: bob_session
     value: ''
-    disabled: true
   - key: eve_session
     value: ''
-    disabled: true
   - key: conversation_id
     value: ''
-    disabled: true
   - key: next_cursor
     value: ''
-    disabled: true
+  - key: sync_cursor
+    value: ''
   - key: mallory_session
     value: ''

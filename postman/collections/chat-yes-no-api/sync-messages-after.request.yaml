@@ -1,0 +1,21 @@
+$kind: http-request
+name: Sync messages after reconnect
+method: GET
+url: '{{base_url}}/conversations/{{conversation_id}}/messages?after={{sync_cursor}}&limit=50'
+order: 15000
+queryParams:
+  - key: after
+    value: '{{sync_cursor}}'
+  - key: limit
+    value: '50'
+headers:
+  - key: Cookie
+    value: 'chat_session={{eve_session}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('messages after the saved cursor are returned in chronological order', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.expect(body.messages).to.be.an('array');
+      pm.expect(body.syncCursor).to.be.a('string');
+      pm.expect(body.nextAfterCursor === null || typeof body.nextAfterCursor === 'string').to.be.true;

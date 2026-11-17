@@ -18,4 +18,4 @@ scripts:
       const match = pm.response.headers.get('Set-Cookie').match(/chat_session=([^;]+)/);
       pm.environment.set('mallory_session', match[1]);
     language: text/javascript
-order: 4740
+order: 5000

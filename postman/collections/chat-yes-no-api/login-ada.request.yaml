@@ -2,7 +2,7 @@ $kind: http-request
 name: Login Ada
 method: POST
 url: '{{base_url}}/auth/login'
-order: 14000
+order: 17000
 headers:
   - key: Content-Type
     value: application/json

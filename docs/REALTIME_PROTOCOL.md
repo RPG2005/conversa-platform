@@ -21,3 +21,13 @@ Todos los mensajes son JSON con `type` y `conversationId`.
 | `typing.stopped` | Al detener la escritura o enviar el mensaje | Elimina el indicador de inmediato. |
 
 Los comandos inválidos se ignoran y no se reenvían a otros miembros.
+
+## Reconexión
+
+Al reconectar, el cliente conserva un cursor opaco formado por el último mensaje ya procesado y solicita:
+
+```text
+GET /conversations/:conversationId/messages?after=:cursor&limit=50
+```
+
+La respuesta entrega `messages` en orden cronológico y `syncCursor` con el último mensaje recibido. Si `nextAfterCursor` no es `null`, se repite la consulta usando ese valor hasta agotar las páginas. El cliente deduplica por `message.id` los mensajes recibidos por HTTP y WebSocket durante la reconexión.

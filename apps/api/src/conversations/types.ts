@@ -20,4 +20,5 @@ export interface ConversationRepository {
   addMember: (conversationId: string, userId: string) => Promise<boolean>;
   createMessage: (input: { conversationId: string; authorId: string; content: string }) => Promise<Message>;
   listMessages: (input: { conversationId: string; limit: number; cursor?: { createdAt: string; id: string } }) => Promise<Message[]>;
+  listMessagesAfter: (input: { conversationId: string; limit: number; cursor: { createdAt: string; id: string } }) => Promise<Message[]>;
 }

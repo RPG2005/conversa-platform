@@ -2,7 +2,7 @@ $kind: http-request
 name: Get current user (Ada)
 method: GET
 url: '{{base_url}}/auth/me'
-order: 2500
+order: 3000
 headers:
   - key: Cookie
     value: 'chat_session={{ada_session}}'
