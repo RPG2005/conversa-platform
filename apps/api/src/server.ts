@@ -7,6 +7,8 @@ import { createConversationRepository } from './conversations/repository.js';
 import { createRealtimeGateway } from './realtime/gateway.js';
 import { createAttachmentStorage } from './storage/service.js';
 import { createNotificationQueue } from './notifications/queue.js';
+import { createNotificationMailer, createNotificationWorker } from './notifications/worker.js';
+import { createNotificationRecipientRepository } from './notifications/repository.js';
 import { loadConfig } from './config.js';
 
 const config = loadConfig();
@@ -15,6 +17,8 @@ const redis = new Redis(config.REDIS_URL, { lazyConnect: true, maxRetriesPerRequ
 const realtimeGateway = createRealtimeGateway(redis, redis.duplicate());
 const attachmentStorage = createAttachmentStorage(config);
 const notificationQueue = createNotificationQueue(redis);
+const notificationWorker = createNotificationWorker(notificationQueue, createNotificationRecipientRepository(database), redis, createNotificationMailer(config), config);
+const notificationTimer = setInterval(() => { void notificationWorker.processOne(); }, 1_000);
 
 const app = await buildApp(config, {
   checkDatabase: async () => {
@@ -30,6 +34,7 @@ const app = await buildApp(config, {
 }, createConversationRepository(database), realtimeGateway, attachmentStorage, notificationQueue);
 
 const shutdown = async () => {
+  clearInterval(notificationTimer);
   await app.close();
   await database.end();
   await redis.quit();

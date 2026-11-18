@@ -9,10 +9,13 @@ export interface NotificationJob {
   messageId: string;
   authorId: string;
   createdAt: string;
+  attempt?: number;
 }
 
 export interface NotificationQueue {
   enqueue: (job: NotificationJob) => Promise<boolean>;
+  dequeue: () => Promise<NotificationJob | null>;
+  retry: (job: NotificationJob) => Promise<void>;
 }
 
 const enqueueOnceScript = `
@@ -34,5 +37,12 @@ export const createNotificationQueue = (redis: Redis): NotificationQueue => ({
       JSON.stringify(job),
     );
     return Number(inserted) === 1;
+  },
+  async dequeue() {
+    const payload = await redis.lpop(queueKey);
+    return payload ? JSON.parse(payload) as NotificationJob : null;
+  },
+  async retry(job) {
+    await redis.rpush(queueKey, JSON.stringify(job));
   },
 });
