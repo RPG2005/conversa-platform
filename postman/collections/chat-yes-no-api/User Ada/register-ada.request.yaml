@@ -1,7 +1,9 @@
 $kind: http-request
+description: |-
+  Registra a Ada y guarda `ada_session`. Flujo de conversación: paso 1; si ya existe, usar Login Ada.
 method: POST
 url: '{{base_url}}/auth/register'
-order: 2000
+order: 1000
 headers:
   - key: Content-Type
     value: application/json

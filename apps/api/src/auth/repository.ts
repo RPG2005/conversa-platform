@@ -59,7 +59,7 @@ export const createAuthRepository = (database: Pool): AuthRepository => ({
        VALUES ($1, $2, NOW())
        ON CONFLICT (user_id) DO UPDATE SET email_enabled = EXCLUDED.email_enabled, updated_at = NOW()
        RETURNING email_enabled, updated_at`,
-      [userId, input.emailEnabled],
+      [userId, input.emailEnabled ? 1 : 0],
     );
     return toNotificationPreference(result.rows[0]);
   },

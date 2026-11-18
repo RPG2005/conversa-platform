@@ -1,4 +1,6 @@
 $kind: http-request
+description: |-
+  Registra a Mallory y guarda `mallory_session`. Preparación de pruebas negativas de HTTP y WebSocket.
 url: "{{base_url}}/auth/register"
 method: POST
 headers:
@@ -18,4 +20,4 @@ scripts:
       const match = pm.response.headers.get('Set-Cookie').match(/chat_session=([^;]+)/);
       pm.environment.set('mallory_session', match[1]);
     language: text/javascript
-order: 5000
+order: 4000

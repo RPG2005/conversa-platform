@@ -1,7 +1,9 @@
 $kind: http-request
+description: |-
+  Obtiene la página siguiente con `message_cursor`. Ejecutar después de List first message page para validar orden y ausencia de duplicados.
 method: GET
 url: '{{base_url}}/conversations/{{conversation_id}}/messages?limit=1&cursor={{next_cursor}}'
-order: 14000
+order: 17000
 queryParams:
   - key: limit
     value: '1'

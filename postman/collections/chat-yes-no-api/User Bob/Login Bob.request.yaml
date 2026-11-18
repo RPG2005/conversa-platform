@@ -1,0 +1,25 @@
+$kind: http-request
+description: |-
+  Inicia sesión como Bob y actualiza `bob_session`. Ejecutar si Bob ya existe o antes de probar su WebSocket.
+name: Login Bob
+url: "{{base_url}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "bob+{{run_id}}@example.test",
+      "password": "{{test_password}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Bob can log in after logout', () => pm.response.to.have.status(200));
+      const cookie = pm.response.headers.get('Set-Cookie');
+      const match = cookie && cookie.match(/chat_session=([^;]+)/);
+      pm.expect(match, 'session cookie').to.not.be.null;
+      pm.environment.set('bob_session', match[1]);
+    language: text/javascript
+order: 1286

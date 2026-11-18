@@ -1,8 +1,10 @@
 $kind: http-request
+description: |-
+  Confirma el perfil de Ada y la validez de `ada_session`. Ejecutar después de registro o login; esperado 200.
 name: Get current user (Ada)
 method: GET
 url: '{{base_url}}/auth/me'
-order: 3000
+order: 1726
 headers:
   - key: Cookie
     value: 'chat_session={{ada_session}}'

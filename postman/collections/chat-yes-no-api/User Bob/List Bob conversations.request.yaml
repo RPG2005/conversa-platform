@@ -1,0 +1,17 @@
+$kind: http-request
+description: |-
+  Lista las conversaciones visibles para Bob. Ejecutar tras Create conversation para comprobar que fue incorporado.
+url: "{{base_url}}/conversations"
+method: GET
+headers:
+  Cookie: chat_session={{bob_session}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Bob can list her conversations', () => pm.response.to.have.status(200));
+      pm.test('the created conversation is listed', () => {
+        const id = pm.environment.get('conversation_id');
+        pm.expect(pm.response.json().conversations.map((conversation) => conversation.id)).to.include(id);
+      });
+    language: text/javascript
+order: 1233

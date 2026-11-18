@@ -1,7 +1,9 @@
 $kind: http-request
+description: |-
+  Crea un mensaje de texto de Ada. Ejecutar después de Create conversation; con Bob conectado debe emitir `message.created`.
 method: POST
 url: "{{base_url}}/conversations/{{conversation_id}}/messages"
-order: 11000
+order: 14000
 headers:
   Content-Type: application/json
   Cookie: chat_session={{ada_session}}
@@ -10,5 +12,5 @@ body:
   content: '{"type":"text","content":"Hello, this is a test message."}'
 scripts:
   - type: afterResponse
-    code: pm.test('Ada message is persisted', () => pm.response.to.have.status(400));
+    code: pm.test('Ada message is persisted', () => pm.response.to.have.status(201));
     language: text/javascript

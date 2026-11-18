@@ -1,8 +1,10 @@
 $kind: http-request
+description: |-
+  Crea un mensaje de Ada y asocia el adjunto validado. Ejecutar después de Complete attachment upload; reutilizarlo debe devolver 409.
 name: Send Ada message with attachment
 method: POST
 url: '{{base_url}}/conversations/{{conversation_id}}/messages'
-order: 10800
+order: 13000
 headers:
   Content-Type: application/json
   Cookie: chat_session={{ada_session}}

@@ -1,0 +1,14 @@
+$kind: http-request
+description: |-
+  Verifica el perfil de la sesión de Bob. Ejecutar después de Login Bob; esperado 200 y datos de Bob.
+url: "{{base_url}}/auth/me"
+method: GET
+headers:
+  Cookie: chat_session={{bob_session}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Bob session returns the authenticated profile', () => pm.response.to.have.status(200));
+      pm.test('profile is bob', () => pm.expect(pm.response.json().user.email).to.equal(`bob+${pm.environment.get('run_id')}@example.test`));
+    language: text/javascript
+order: 1173

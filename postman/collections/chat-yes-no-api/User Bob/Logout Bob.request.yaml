@@ -1,0 +1,14 @@
+$kind: http-request
+description: |-
+  Cierra la sesión de Bob. Último paso opcional de limpieza del flujo de identidad.
+name: Logout Bob
+method: POST
+url: "{{base_url}}/auth/logout"
+order: 1399
+headers:
+  - key: Cookie
+    value: "chat_session={{bob_session}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('logout invalidates Bob session', () => pm.response.to.have.status(204));

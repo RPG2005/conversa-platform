@@ -1,9 +1,9 @@
 $kind: websocket-request
 name: WebSocket Mallory (forbidden)
-description: Prueba de autorización. Mallory no es miembro y el servidor debe
-  cerrar con código 1008.
+description: |-
+  Prueba negativa: Mallory no es miembro. Abrir después de Create conversation y Register Mallory; debe cerrar con 1008 (Forbidden).
 url: ws://localhost:3000/ws/conversations/{{conversation_id}}
 headers:
   Cookie: chat_session={{mallory_session}}
 settings: {}
-order: 21000
+order: 22000

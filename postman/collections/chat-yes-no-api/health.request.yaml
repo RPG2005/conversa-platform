@@ -1,4 +1,6 @@
 $kind: http-request
+description: |-
+  Comprueba API, PostgreSQL y Redis. Ejecutar primero en todos los flujos; debe responder 200 con servicios `ok`.
 method: GET
 url: '{{base_url}}/health'
 order: 1000

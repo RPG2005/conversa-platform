@@ -1,8 +1,10 @@
 $kind: http-request
+description: |-
+  Valida metadatos y crea un adjunto pendiente; guarda `attachment_id` y `attachment_upload_url`. Ejecutar antes de Upload attachment binary.
 name: Create attachment upload URL
 method: POST
 url: '{{base_url}}/conversations/{{conversation_id}}/attachments/upload-url'
-order: 10500
+order: 9000
 headers:
   - key: Content-Type
     value: application/json

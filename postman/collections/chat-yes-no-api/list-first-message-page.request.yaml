@@ -1,7 +1,9 @@
 $kind: http-request
+description: |-
+  Obtiene la primera página y guarda `message_cursor`. Ejecutar después de los mensajes de Ada y Bob, antes de List next message page.
 method: GET
 url: '{{base_url}}/conversations/{{conversation_id}}/messages?limit=1'
-order: 13000
+order: 16000
 queryParams:
   - key: limit
     value: '1'

@@ -1,8 +1,10 @@
 $kind: http-request
+description: |-
+  Sube el binario mediante URL firmada a SeaweedFS. Ejecutar después de Create attachment upload URL y antes de Complete attachment upload.
 name: Upload attachment binary
 method: PUT
 url: '{{attachment_upload_url}}'
-order: 10600
+order: 10000
 headers:
   - key: Content-Type
     value: application/pdf

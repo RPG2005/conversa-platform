@@ -1,8 +1,10 @@
 $kind: http-request
+description: |-
+  Inicia sesión como Ada y actualiza `ada_session`. Ejecutar antes de cualquier operación autenticada de Ada.
 name: Login Ada
 method: POST
 url: '{{base_url}}/auth/login'
-order: 17000
+order: 1950
 headers:
   - key: Content-Type
     value: application/json

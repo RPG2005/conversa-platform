@@ -1,8 +1,10 @@
 $kind: http-request
+description: |-
+  Comprueba MIME y tamaño reales y marca el adjunto como `uploaded`. Ejecutar tras Upload attachment binary y antes de asociarlo a un mensaje.
 name: Complete attachment upload
 method: POST
 url: '{{base_url}}/conversations/{{conversation_id}}/attachments/{{attachment_id}}/complete'
-order: 10700
+order: 11000
 headers:
   - key: Cookie
     value: 'chat_session={{ada_session}}'

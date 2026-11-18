@@ -1,8 +1,10 @@
 $kind: http-request
+description: |-
+  Genera una URL temporal de descarga para un adjunto subido. Ejecutar después de Complete attachment upload; solo miembros pueden solicitarla.
 name: Get attachment download URL
 method: GET
 url: '{{base_url}}/conversations/{{conversation_id}}/attachments/{{attachment_id}}/download-url'
-order: 10800
+order: 12000
 headers:
   - key: Cookie
     value: 'chat_session={{ada_session}}'

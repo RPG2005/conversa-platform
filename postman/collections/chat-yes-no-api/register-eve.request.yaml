@@ -1,7 +1,9 @@
 $kind: http-request
+description: |-
+  Registra a Eve y guarda `eve_session`. Preparación del flujo de autorización: antes de Eve cannot read y Add Eve.
 method: POST
 url: '{{base_url}}/auth/register'
-order: 6000
+order: 5000
 headers:
   - key: Content-Type
     value: application/json

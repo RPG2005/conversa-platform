@@ -1,7 +1,9 @@
 $kind: http-request
+description: |-
+  Confirma que Eve no puede leer antes de ser miembro. Ejecutar después de Create conversation y antes de Add Eve; esperado 404.
 method: GET
 url: '{{base_url}}/conversations/{{conversation_id}}/messages?limit=1'
-order: 9000
+order: 7000
 queryParams:
   - key: limit
     value: '1'

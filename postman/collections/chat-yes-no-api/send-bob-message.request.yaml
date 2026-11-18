@@ -1,7 +1,9 @@
 $kind: http-request
+description: |-
+  Crea un mensaje de texto de Bob. Ejecutar después del mensaje de Ada para preparar paginación y sincronización.
 method: POST
 url: '{{base_url}}/conversations/{{conversation_id}}/messages'
-order: 12000
+order: 15000
 headers:
   - key: Content-Type
     value: application/json

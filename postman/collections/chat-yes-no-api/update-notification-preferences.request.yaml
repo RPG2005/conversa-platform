@@ -1,0 +1,24 @@
+$kind: http-request
+name: Update notification preferences
+description: |-
+  Activa o desactiva los correos del usuario autenticado.
+  Flujo de notificaciones: ejecutar después de Get notification preferences y antes de enviar un mensaje de Ada a Bob desconectado. Con `false`, Mailpit no debe recibir un correo para Bob.
+method: PUT
+url: '{{base_url}}/auth/notification-preferences'
+order: 4100
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Cookie
+    value: 'chat_session={{bob_session}}'
+body:
+  type: json
+  content: |-
+    {
+      "emailEnabled": false
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Bob preferences are updated', () => pm.response.to.have.status(200));
+      pm.expect(pm.response.json().notification.emailEnabled).to.equal(false);

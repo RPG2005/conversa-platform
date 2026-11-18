@@ -1,7 +1,9 @@
 $kind: http-request
+description: |-
+  Crea la conversación privada entre Ada y Bob y guarda `conversation_id`. Ejecutar después de ambos registros o logins; esperado 201.
 method: POST
 url: '{{base_url}}/conversations'
-order: 7000
+order: 6000
 headers:
   - key: Content-Type
     value: application/json

@@ -1,10 +1,11 @@
 $kind: websocket-request
 name: WebSocket Ada
-description: ""
+description: |-
+  Conecta a Ada al WebSocket. Abrir después de Create conversation y mantenerlo durante mensajes o typing; usar heartbeat para presencia.
 url: ws://localhost:3000/ws/conversations/{{conversation_id}}
 headers:
   Cookie: chat_session={{ada_session}}
 settings: {}
 messages: .resources/WebSocket Ada-1.resources/messages
 examples: .resources/WebSocket Ada-1.resources/examples
-order: 18000
+order: 19000

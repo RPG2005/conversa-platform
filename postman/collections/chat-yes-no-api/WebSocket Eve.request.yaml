@@ -1,8 +1,9 @@
 $kind: websocket-request
-description: ""
+description: |-
+  Conecta a Eve cuando ya es miembro. Abrir después de Add Eve para comprobar eventos de mensajes, presencia y escritura.
 url: ws://localhost:3000/ws/conversations/{{conversation_id}}
 headers:
   Cookie: chat_session={{eve_session}}
 settings: {}
 messages: .resources/WebSocket Eve.resources/messages
-order: 20000
+order: 21000

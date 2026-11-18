@@ -1,8 +1,10 @@
 $kind: http-request
+description: |-
+  Lista las conversaciones de Ada. Ejecutar después de Create conversation para comprobar su pertenencia.
 name: List Ada conversations
 method: GET
 url: '{{base_url}}/conversations'
-order: 8000
+order: 1733
 headers:
   - key: Cookie
     value: 'chat_session={{ada_session}}'

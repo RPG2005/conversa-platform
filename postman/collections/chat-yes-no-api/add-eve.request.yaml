@@ -1,7 +1,9 @@
 $kind: http-request
+description: |-
+  Añade a Eve a la conversación como Ada. Ejecutar justo después de Eve cannot read; tras 201 Eve ya puede leer y conectarse.
 method: POST
 url: "{{base_url}}/conversations/{{conversation_id}}/members"
-order: 10000
+order: 8000
 headers:
   Content-Type: application/json
   Cookie: chat_session={{ada_session}}

@@ -1,0 +1,16 @@
+$kind: http-request
+name: Get notification preferences
+description: |-
+  Consulta las preferencias de correo del usuario autenticado. Un usuario sin configuración previa recibe `emailEnabled: true`.
+  Flujo de notificaciones: ejecutar después de Login Bob y antes de Update notification preferences para conocer el valor inicial.
+method: GET
+url: '{{base_url}}/auth/notification-preferences'
+order: 4000
+headers:
+  - key: Cookie
+    value: 'chat_session={{bob_session}}'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Bob preferences are returned', () => pm.response.to.have.status(200));
+      pm.expect(pm.response.json().notification.emailEnabled).to.be.a('boolean');

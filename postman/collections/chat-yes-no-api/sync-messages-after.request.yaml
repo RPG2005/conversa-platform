@@ -1,8 +1,10 @@
 $kind: http-request
+description: |-
+  Recupera los mensajes posteriores a `sync_cursor` tras una reconexión. Ejecutar después de confirmar el cursor anterior.
 name: Sync messages after reconnect
 method: GET
 url: '{{base_url}}/conversations/{{conversation_id}}/messages?after={{sync_cursor}}&limit=50'
-order: 15000
+order: 18000
 queryParams:
   - key: after
     value: '{{sync_cursor}}'

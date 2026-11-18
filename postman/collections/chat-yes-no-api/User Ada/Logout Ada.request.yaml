@@ -1,0 +1,14 @@
+$kind: http-request
+description: |-
+  Cierra la sesión de Ada. Último paso opcional de identidad; después las rutas autenticadas deben devolver 401.
+name: Logout Ada
+method: POST
+url: "{{base_url}}/auth/logout"
+order: 1961
+headers:
+  - key: Cookie
+    value: "chat_session={{ada_session}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('logout invalidates Ada session', () => pm.response.to.have.status(204));
