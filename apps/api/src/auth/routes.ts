@@ -21,6 +21,7 @@ const loginSchema = z.object({
   email: z.email().max(320).transform((email) => email.toLowerCase()),
   password: z.string().min(1).max(128),
 });
+const notificationPreferenceSchema = z.object({ emailEnabled: z.boolean() });
 
 const publicUser = (user: { id: string; email: string; displayName: string; createdAt?: Date }) => ({
   id: user.id,
@@ -115,5 +116,21 @@ export const registerAuthRoutes = (
     const user = await requireSession(request, reply, repository);
     if (!user || 'statusCode' in user) return;
     return reply.send({ user: publicUser(user) });
+  });
+
+  app.get('/auth/notification-preferences', async (request, reply) => {
+    const user = await requireSession(request, reply, repository);
+    if (!user || 'statusCode' in user) return;
+    const preference = await repository.getNotificationPreference(user.id);
+    return reply.send({ notification: { emailEnabled: preference.emailEnabled, updatedAt: preference.updatedAt?.toISOString() ?? null } });
+  });
+
+  app.put('/auth/notification-preferences', async (request, reply) => {
+    const user = await requireSession(request, reply, repository);
+    if (!user || 'statusCode' in user) return;
+    const parsed = notificationPreferenceSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'Invalid notification preferences' });
+    const preference = await repository.updateNotificationPreference(user.id, parsed.data);
+    return reply.send({ notification: { emailEnabled: preference.emailEnabled, updatedAt: preference.updatedAt?.toISOString() ?? null } });
   });
 };

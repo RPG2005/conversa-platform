@@ -19,6 +19,12 @@ export const sessions = pgTable('sessions', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const notificationPreferences = pgTable('notification_preferences', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  emailEnabled: integer('email_enabled').notNull().default(1),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const conversations = pgTable('conversations', {
   id: uuid('id').defaultRandom().primaryKey(),
   createdBy: uuid('created_by')

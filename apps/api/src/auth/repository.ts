@@ -1,5 +1,5 @@
 import type { Pool } from 'pg';
-import type { AuthRepository, AuthSessionUser, AuthUser } from './types.js';
+import type { AuthRepository, AuthSessionUser, AuthUser, NotificationPreference } from './types.js';
 
 const toAuthUser = (row: Record<string, unknown>): AuthUser => ({
   id: row.id as string,
@@ -7,6 +7,11 @@ const toAuthUser = (row: Record<string, unknown>): AuthUser => ({
   displayName: row.display_name as string,
   passwordHash: row.password_hash as string,
   createdAt: row.created_at as Date,
+});
+
+const toNotificationPreference = (row: Record<string, unknown>): NotificationPreference => ({
+  emailEnabled: row.email_enabled === true || row.email_enabled === 1,
+  updatedAt: row.updated_at ? row.updated_at as Date : null,
 });
 
 export const createAuthRepository = (database: Pool): AuthRepository => ({
@@ -43,5 +48,19 @@ export const createAuthRepository = (database: Pool): AuthRepository => ({
   },
   async deleteSession(tokenHash) {
     await database.query('DELETE FROM sessions WHERE token_hash = $1', [tokenHash]);
+  },
+  async getNotificationPreference(userId) {
+    const result = await database.query('SELECT email_enabled, updated_at FROM notification_preferences WHERE user_id = $1', [userId]);
+    return result.rows[0] ? toNotificationPreference(result.rows[0]) : { emailEnabled: true, updatedAt: null };
+  },
+  async updateNotificationPreference(userId, input) {
+    const result = await database.query(
+      `INSERT INTO notification_preferences (user_id, email_enabled, updated_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (user_id) DO UPDATE SET email_enabled = EXCLUDED.email_enabled, updated_at = NOW()
+       RETURNING email_enabled, updated_at`,
+      [userId, input.emailEnabled],
+    );
+    return toNotificationPreference(result.rows[0]);
   },
 });

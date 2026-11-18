@@ -13,3 +13,15 @@ docker compose exec redis redis-cli LLEN chat:notifications:pending
 ```
 
 El worker intenta cada trabajo un máximo de tres veces. Las pruebas unitarias cubren entrega a desconectados y reintento ante fallo.
+
+## Preferencias por usuario
+
+Con la cookie de Bob, consulta `GET /auth/notification-preferences`. Un usuario sin configuración previa recibe `emailEnabled: true`.
+
+Después envía `PUT /auth/notification-preferences` con:
+
+```json
+{ "emailEnabled": false }
+```
+
+La respuesta debe ser `200`. Con Bob desconectado, envía un mensaje desde Ada y confirma en Mailpit que no se genera un correo para Bob. Un cuerpo inválido devuelve `400` y una petición sin sesión devuelve `401`.

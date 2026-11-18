@@ -22,6 +22,7 @@ const apps: Awaited<ReturnType<typeof buildApp>>[] = [];
 const createRepository = () => {
   const users = new Map<string, AuthUser>();
   const sessions = new Map<string, string>();
+  const preferences = new Map<string, { emailEnabled: boolean; updatedAt: Date }>();
   let userSequence = 0;
 
   const repository: AuthRepository = {
@@ -43,6 +44,14 @@ const createRepository = () => {
     },
     async deleteSession(tokenHash) {
       sessions.delete(tokenHash);
+    },
+    async getNotificationPreference(userId) {
+      return preferences.get(userId) ?? { emailEnabled: true, updatedAt: null };
+    },
+    async updateNotificationPreference(userId, input) {
+      const preference = { ...input, updatedAt: new Date() };
+      preferences.set(userId, preference);
+      return preference;
     },
   };
 
@@ -120,5 +129,20 @@ describe('authentication routes', () => {
     expect(logout.headers['set-cookie']).toContain('Max-Age=0');
     expect(sessions.has(hashSessionToken(token!))).toBe(false);
     expect((await app.inject({ method: 'GET', url: '/auth/me', headers: { cookie } })).statusCode).toBe(401);
+  });
+
+  it('returns default notification preferences and lets the authenticated user update them', async () => {
+    const { app, repository } = await buildAuthTestApp();
+    const passwordHash = await hashPassword('secure-password-123');
+    await repository.createUser({ email: 'ada@example.com', displayName: 'Ada', passwordHash });
+    const login = await app.inject({ method: 'POST', url: '/auth/login', payload: { email: 'ada@example.com', password: 'secure-password-123' } });
+    const cookie = login.headers['set-cookie'] as string;
+
+    expect((await app.inject({ method: 'GET', url: '/auth/notification-preferences', headers: { cookie } })).json().notification.emailEnabled).toBe(true);
+    const updated = await app.inject({ method: 'PUT', url: '/auth/notification-preferences', headers: { cookie }, payload: { emailEnabled: false } });
+    expect(updated.statusCode).toBe(200);
+    expect(updated.json().notification.emailEnabled).toBe(false);
+    expect((await app.inject({ method: 'PUT', url: '/auth/notification-preferences', headers: { cookie }, payload: {} })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'GET', url: '/auth/notification-preferences' })).statusCode).toBe(401);
   });
 });
