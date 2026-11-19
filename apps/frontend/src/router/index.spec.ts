@@ -17,7 +17,9 @@ describe('auth guard', () => {
     installAuthGuard(testRouter, pinia)
     await testRouter.push('/')
     expect(testRouter.currentRoute.value.path).toBe('/access')
-    useSessionStore(pinia).markAuthenticated()
+    const session = useSessionStore(pinia)
+    session.user = { id: 'user-1', email: 'ada@example.test', displayName: 'Ada' }
+    session.initialized = true
     await testRouter.push('/')
     expect(testRouter.currentRoute.value.path).toBe('/')
   })
