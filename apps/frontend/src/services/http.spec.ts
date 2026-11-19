@@ -7,7 +7,7 @@ describe('request', () => {
   it('sends cookies and returns JSON responses', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'ok' }), { status: 200 })))
     await expect(request<{ status: string }>('/health')).resolves.toEqual({ status: 'ok' })
-    expect(fetch).toHaveBeenCalledWith('http://localhost:3000/health', expect.objectContaining({ credentials: 'include' }))
+    expect(fetch).toHaveBeenCalledWith('/api/health', expect.objectContaining({ credentials: 'include' }))
   })
 
   it('normalizes API and network errors', async () => {

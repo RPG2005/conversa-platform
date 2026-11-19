@@ -11,6 +11,7 @@ Base de desarrollo para evolucionar la aplicación a un chat autenticado, persis
 | SeaweedFS | Adjuntos y avatares mediante API S3 | `http://localhost:8333` |
 | Mailpit | Captura de correos de desarrollo | [Bandeja](http://localhost:8025) |
 | API (perfil `app`) | Healthcheck y futura API de producto | `http://localhost:3000` |
+| Frontend (perfil `app`) | Cliente Vue con recarga en caliente | `http://localhost:5173` |
 
 ## Inicio rápido
 

@@ -1,6 +1,6 @@
 import type { ApiError } from '../contracts/api'
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
 export class HttpError extends Error implements ApiError {
   status: number
