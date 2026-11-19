@@ -28,6 +28,26 @@ services:
     networks:
       - chat_network
 
+  frontend:
+    build:
+      context: ./apps/frontend
+    container_name: chat-yes-no-frontend
+    restart: unless-stopped
+    profiles: ["app"]
+    environment:
+      VITE_API_PROXY_TARGET: http://api:3000
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ./apps/frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - chat_network
+
   postgres:
     image: postgres:16-alpine
     container_name: chat-yes-no-postgres
@@ -97,6 +117,7 @@ volumes:
   postgres_data:
   redis_data:
   object_storage_data:
+  frontend_node_modules:
 
 networks:
   chat_network:
