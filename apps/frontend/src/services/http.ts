@@ -21,6 +21,9 @@ export const request = async <T>(path: string, options: RequestInit = {}): Promi
 
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as { error?: string } | null
+    if (response.status === 401 && !path.startsWith('/auth/')) {
+      window.dispatchEvent(new Event('auth:expired'))
+    }
     throw new HttpError(response.status, body?.error ?? 'La solicitud no pudo completarse.')
   }
 
