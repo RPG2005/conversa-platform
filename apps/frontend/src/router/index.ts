@@ -3,7 +3,8 @@ import { createRouter, createWebHistory, type Router } from 'vue-router'
 import { useSessionStore } from '../stores/session'
 import AccessView from '../views/AccessView.vue'
 import HomeView from '../views/HomeView.vue'
-export const router = createRouter({ history: createWebHistory(), routes: [{ path: '/', component: HomeView, meta: { requiresAuth: true } }, { path: '/access', component: AccessView }] })
+import ConversationView from '../views/ConversationView.vue'
+export const router = createRouter({ history: createWebHistory(), routes: [{ path: '/', component: HomeView, meta: { requiresAuth: true } }, { path: '/conversations/:conversationId', component: ConversationView, meta: { requiresAuth: true } }, { path: '/access', component: AccessView }] })
 export const installAuthGuard = (targetRouter: Router, pinia: Pinia) => targetRouter.beforeEach(async (to) => {
   const session = useSessionStore(pinia)
   await session.restore()
