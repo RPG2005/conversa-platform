@@ -5,10 +5,12 @@ import UiState from '../components/UiState.vue'
 import { useConversationsStore } from '../stores/conversations'
 import { useSessionStore } from '../stores/session'
 import { formatDateTime } from '../format-date'
+import { usePreferencesStore } from '../stores/preferences'
 
 const router = useRouter()
 const session = useSessionStore()
 const conversations = useConversationsStore()
+const preferences = usePreferencesStore()
 const participantEmail = ref('')
 const creating = ref(false)
 const createError = ref('')
@@ -36,6 +38,7 @@ const signOut = async () => {
   try {
     await session.logout()
     conversations.clear()
+    preferences.clear()
     await router.replace('/access')
   } catch (error) {
     signOutError.value = error instanceof Error ? error.message : 'No se pudo cerrar la sesión. Inténtalo de nuevo.'
@@ -55,6 +58,13 @@ const signOut = async () => {
         </p>
         <h1>Conversaciones</h1>
       </div>
+      <button
+        class="secondary-button"
+        type="button"
+        @click="router.push('/settings')"
+      >
+        Preferencias
+      </button>
       <button
         type="button"
         :disabled="signingOut"

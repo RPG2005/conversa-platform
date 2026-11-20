@@ -30,9 +30,9 @@ export const syncMessagesAfter = async (conversationId: string, cursor?: string)
   return request<MessageSyncPage>(`/conversations/${conversationId}/messages?${params.toString()}`)
 }
 
-export const createMessage = async (conversationId: string, content: string) =>
+export const createMessage = async (conversationId: string, content: string, attachmentIds: string[] = []) =>
   request<{ message: Message }>(`/conversations/${conversationId}/messages`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, ...(attachmentIds.length ? { attachmentIds } : {}) }),
   })

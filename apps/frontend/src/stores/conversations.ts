@@ -75,8 +75,8 @@ export const useConversationsStore = defineStore('conversations', {
         this.loadingMessagesByConversation[conversationId] = false
       }
     },
-    async sendMessage(conversationId: string, content: string) {
-      const response = await conversationsApi.createMessage(conversationId, content.trim())
+    async sendMessage(conversationId: string, content: string, attachmentIds: string[] = []) {
+      const response = await conversationsApi.createMessage(conversationId, content.trim(), attachmentIds)
       this.messagesByConversation[conversationId] = mergeMessages(this.messagesByConversation[conversationId] ?? [], [response.message])
       this.updateConversationActivity(conversationId, response.message.createdAt)
       return response.message
