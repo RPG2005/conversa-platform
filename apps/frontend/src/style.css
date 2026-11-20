@@ -8,7 +8,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; min-height: 100vh; }
-button, input { font: inherit; }
+button, input, textarea { font: inherit; }
 button { padding: .7rem 1rem; border: 0; border-radius: .55rem; background: #2563eb; color: #fff; cursor: pointer; font-weight: 650; }
 button:disabled { cursor: wait; opacity: .65; }
 button:focus-visible, input:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
@@ -57,6 +57,17 @@ main { max-width: 760px; margin: 4rem auto; padding: 2rem; border-radius: 1rem; 
 .message-author { color: #5b6675; font-size: .75rem; font-weight: 700; }
 .message-content { overflow-wrap: anywhere; white-space: pre-wrap; line-height: 1.45; }
 .message-time { justify-self: end; color: #64748b; font-size: .7rem; }
+.message-attachments, .selected-attachments { display: grid; gap: .45rem; margin: .35rem 0; padding: 0; list-style: none; }
+.message-attachments li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .25rem .75rem; padding: .55rem .65rem; border: 1px solid #dbe4ef; border-radius: .55rem; background: #ffffffb8; }
+.attachment-name { overflow-wrap: anywhere; font-size: .85rem; font-weight: 650; }
+.attachment-size { color: #64748b; font-size: .75rem; }
+.attachment-download { grid-column: 1 / -1; justify-self: start; }
+.attachment-error { grid-column: 1 / -1; color: #991b1b; font-size: .78rem; }
+.attachment-picker { display: grid; gap: .45rem; }
+.attachment-picker label { font-size: .87rem; }
+.attachment-picker input[type="file"] { width: 100%; padding: .6rem; border: 1px dashed #cbd5e1; border-radius: .5rem; background: #f8fafc; }
+.selected-attachments { color: #475569; font-size: .82rem; }
+.upload-progress { margin: 0; color: #1d4ed8; font-size: .82rem; }
 .presence-line, .typing-line, .inline-error { margin: 0; text-align: center; font-size: .82rem; }
 .presence-line { color: #15803d; }
 .typing-line { color: #475569; font-style: italic; }
@@ -66,6 +77,16 @@ main { max-width: 760px; margin: 4rem auto; padding: 2rem; border-radius: 1rem; 
 .message-composer textarea { width: 100%; resize: vertical; line-height: 1.4; }
 .composer-footer { display: flex; align-items: center; justify-content: space-between; color: #64748b; font-size: .85rem; }
 .state { padding: 1rem; border: 1px solid #d7e0ec; border-radius: .75rem; }
+.preferences-header { display: grid; justify-items: start; gap: .55rem; }
+.preferences-header h1 { margin: 0; font-size: clamp(1.45rem, 4vw, 1.9rem); }
+.preferences-header .intro { margin: 0 0 1rem; }
+.preferences-form { display: grid; gap: 1rem; }
+.preference-option { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem; border: 1px solid #dbe4ef; border-radius: .7rem; }
+.preference-option span { display: grid; gap: .3rem; }
+.preference-option small { color: #64748b; line-height: 1.45; }
+.preference-option input { width: 1.2rem; height: 1.2rem; accent-color: #2563eb; }
+.preferences-actions { display: flex; justify-content: flex-end; gap: .65rem; }
+.save-confirmation { margin: 0; color: #15803d; font-size: .9rem; }
 
 @media (max-width: 520px) {
   main { margin: 1rem auto; padding: 1.25rem; }

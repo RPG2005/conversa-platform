@@ -6,6 +6,8 @@ import { useConversationsStore } from '../stores/conversations'
 import { useSessionStore } from '../stores/session'
 import { formatDateTime } from '../format-date'
 import { useConversationRealtime } from '../composables/useConversationRealtime'
+import { useAttachmentUpload } from '../composables/useAttachmentUpload'
+import { useAttachmentDownload } from '../composables/useAttachmentDownload'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,7 +16,10 @@ const session = useSessionStore()
 const content = ref('')
 const sending = ref(false)
 const sendError = ref('')
+const fileInput = ref()
+const attachmentUpload = useAttachmentUpload()
 const conversationId = computed(() => String(route.params.conversationId))
+const attachmentDownload = useAttachmentDownload(conversationId)
 const messages = computed(() => conversations.messagesFor(conversationId.value))
 const loading = computed(() => conversations.loadingMessagesByConversation[conversationId.value] ?? false)
 const loadError = computed(() => conversations.messageErrors[conversationId.value] ?? '')
@@ -56,15 +61,24 @@ const loadOlder = async () => {
   if (panel) panel.scrollTop += panel.scrollHeight - oldHeight
 }
 
+const selectAttachments = () => {
+  const accepted = attachmentUpload.selectFiles(fileInput.value?.files ?? [])
+  if (!accepted && fileInput.value) fileInput.value.value = ''
+}
+
 const send = async () => {
   const submittedContent = content.value.trim()
-  if (!submittedContent || sending.value) return
+  if (!submittedContent || sending.value || attachmentUpload.uploading.value) return
   sending.value = true
   sendError.value = ''
   realtime.stopTyping()
   try {
-    await conversations.sendMessage(conversationId.value, submittedContent)
+    const staged = await attachmentUpload.uploadSelected(conversationId.value)
+    const attachmentIds = staged?.map(({ attachment }) => attachment.id) ?? []
+    await conversations.sendMessage(conversationId.value, submittedContent, attachmentIds)
     content.value = ''
+    attachmentUpload.clear()
+    if (fileInput.value) fileInput.value.value = ''
     await nextTick()
     if (messagePanel.value) messagePanel.value.scrollTop = messagePanel.value.scrollHeight
   } catch (error) {
@@ -154,6 +168,34 @@ const send = async () => {
             <p class="message-content">
               {{ message.content }}
             </p>
+            <ul
+              v-if="message.attachments?.length"
+              class="message-attachments"
+              aria-label="Archivos adjuntos"
+            >
+              <li
+                v-for="attachment in message.attachments"
+                :key="attachment.id"
+              >
+                <span class="attachment-name">{{ attachment.originalName }}</span>
+                <span class="attachment-size">{{ (attachment.size / 1024 / 1024).toFixed(2) }} MB</span>
+                <button
+                  class="link-button attachment-download"
+                  type="button"
+                  :disabled="attachmentDownload.downloadingId.value === attachment.id"
+                  @click="attachmentDownload.download(attachment)"
+                >
+                  {{ attachmentDownload.downloadingId.value === attachment.id ? 'Descargando…' : 'Descargar' }}
+                </button>
+                <span
+                  v-if="attachmentDownload.errors.value[attachment.id]"
+                  class="attachment-error"
+                  role="alert"
+                >
+                  {{ attachmentDownload.errors.value[attachment.id] }}
+                </span>
+              </li>
+            </ul>
             <time
               class="message-time"
               :datetime="message.createdAt"
@@ -202,6 +244,43 @@ const send = async () => {
         @blur="realtime.stopTyping"
         @keydown.enter.exact.prevent="send"
       />
+      <div class="attachment-picker">
+        <label for="message-attachments">Adjuntar archivos (JPEG, PNG, WebP o PDF; máximo 10 MB cada uno)</label>
+        <input
+          id="message-attachments"
+          ref="fileInput"
+          type="file"
+          accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+          multiple
+          :disabled="sending || attachmentUpload.uploading.value"
+          @change="selectAttachments"
+        >
+        <ul
+          v-if="attachmentUpload.selectedFiles.value.length"
+          class="selected-attachments"
+        >
+          <li
+            v-for="file in attachmentUpload.selectedFiles.value"
+            :key="`${file.name}-${file.lastModified}`"
+          >
+            {{ file.name }} · {{ (file.size / 1024 / 1024).toFixed(2) }} MB
+          </li>
+        </ul>
+        <p
+          v-if="attachmentUpload.progress.value"
+          class="upload-progress"
+          role="status"
+        >
+          {{ attachmentUpload.progress.value }}
+        </p>
+        <p
+          v-if="attachmentUpload.error.value"
+          class="form-error"
+          role="alert"
+        >
+          {{ attachmentUpload.error.value }}
+        </p>
+      </div>
       <p
         v-if="sendError"
         class="form-error"
@@ -213,9 +292,9 @@ const send = async () => {
         <span>{{ content.length }}/4000</span>
         <button
           type="submit"
-          :disabled="sending || !content.trim()"
+          :disabled="sending || attachmentUpload.uploading.value || !content.trim()"
         >
-          {{ sending ? 'Enviando…' : 'Enviar mensaje' }}
+          {{ attachmentUpload.uploading.value ? 'Subiendo adjuntos…' : sending ? 'Enviando…' : 'Enviar mensaje' }}
         </button>
       </div>
     </form>
