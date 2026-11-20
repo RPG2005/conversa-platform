@@ -20,7 +20,7 @@ Compose usa el proyecto `conversa-platform`. Los volúmenes locales conservan su
 ```powershell
 Copy-Item .env.example .env
 # Edita .env y usa contraseñas locales seguras.
-@('chat-yes-no-upgrade_postgres_data', 'chat-yes-no-upgrade_redis_data', 'chat-yes-no-upgrade_object_storage_data', 'chat-yes-no-upgrade_frontend_node_modules') | ForEach-Object { docker volume create $_ | Out-Null }
+@('conversa-platform_postgres_data', 'conversa-platform_redis_data', 'conversa-platform_object_storage_data', 'conversa-platform_frontend_node_modules') | ForEach-Object { docker volume create $_ | Out-Null }
 docker compose up -d
 docker compose ps
 ```
@@ -28,7 +28,7 @@ docker compose ps
 En Linux o macOS, crea los volúmenes persistentes antes de iniciar Compose:
 
 ```sh
-for volume in chat-yes-no-upgrade_postgres_data chat-yes-no-upgrade_redis_data chat-yes-no-upgrade_object_storage_data chat-yes-no-upgrade_frontend_node_modules; do docker volume create "$volume" >/dev/null; done
+for volume in conversa-platform_postgres_data conversa-platform_redis_data conversa-platform_object_storage_data conversa-platform_frontend_node_modules; do docker volume create "$volume" >/dev/null; done
 ```
 
 Para compilar y levantar también la API:
@@ -51,7 +51,7 @@ Para eliminar los contenedores y, de forma separada, los datos locales:
 
 ```powershell
 docker compose down
-docker volume rm chat-yes-no-upgrade_postgres_data chat-yes-no-upgrade_redis_data chat-yes-no-upgrade_object_storage_data chat-yes-no-upgrade_frontend_node_modules
+docker volume rm conversa-platform_postgres_data conversa-platform_redis_data conversa-platform_object_storage_data conversa-platform_frontend_node_modules
 ```
 
 El segundo comando elimina conversaciones, mensajes, caché y archivos almacenados localmente.

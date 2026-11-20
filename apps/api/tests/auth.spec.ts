@@ -6,7 +6,7 @@ import type { AuthRepository, AuthUser } from '../src/auth/types.js';
 import type { AppConfig } from '../src/config.js';
 
 const config: AppConfig = {
-  DATABASE_URL: 'postgresql://user:password@localhost:5432/chat_yes_no',
+  DATABASE_URL: 'postgresql://user:password@localhost:5432/conversa',
   REDIS_URL: 'redis://:password@localhost:6379',
   API_SECRET: 'a-very-long-local-secret-with-at-least-32-characters',
   SESSION_TTL_HOURS: 24,

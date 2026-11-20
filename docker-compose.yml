@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     profiles: ["app"]
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-chat_user}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-chat_yes_no}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-chat_user}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-conversa}
       REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379
       API_SECRET: ${API_SECRET:?Set API_SECRET in .env}
       S3_INTERNAL_ENDPOINT: http://object-storage:8333
@@ -53,7 +53,7 @@ services:
     container_name: conversa-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-chat_yes_no}
+      POSTGRES_DB: ${POSTGRES_DB:-conversa}
       POSTGRES_USER: ${POSTGRES_USER:-chat_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     ports:
@@ -116,16 +116,16 @@ services:
 volumes:
   # Keep the previous volume IDs so the folder/project rename reuses local data.
   postgres_data:
-    name: chat-yes-no-upgrade_postgres_data
+    name: conversa-platform_postgres_data
     external: true
   redis_data:
-    name: chat-yes-no-upgrade_redis_data
+    name: conversa-platform_redis_data
     external: true
   object_storage_data:
-    name: chat-yes-no-upgrade_object_storage_data
+    name: conversa-platform_object_storage_data
     external: true
   frontend_node_modules:
-    name: chat-yes-no-upgrade_frontend_node_modules
+    name: conversa-platform_frontend_node_modules
     external: true
 
 networks:

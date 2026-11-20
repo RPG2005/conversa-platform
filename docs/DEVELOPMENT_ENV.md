@@ -10,7 +10,7 @@
 ## Variables que usará el backend
 
 ```dotenv
-DATABASE_URL=postgresql://chat_user:password@postgres:5432/chat_yes_no
+DATABASE_URL=postgresql://chat_user:password@postgres:5432/conversa
 REDIS_URL=redis://:password@redis:6379
 S3_ENDPOINT=http://object-storage:8333
 S3_BUCKET=chat-media
@@ -32,7 +32,7 @@ Los nombres de host anteriores funcionan entre contenedores. Desde el equipo anf
 
 ```powershell
 docker compose logs -f postgres
-docker compose exec postgres psql -U chat_user -d chat_yes_no
+docker compose exec postgres psql -U chat_user -d conversa
 docker compose exec redis redis-cli -a $env:REDIS_PASSWORD ping
 docker compose --profile app run --rm api npm run db:migrate
 ```

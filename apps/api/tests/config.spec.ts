@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../src/config.js';
 
 const validEnvironment = {
-  DATABASE_URL: 'postgresql://user:password@localhost:5432/chat_yes_no',
+  DATABASE_URL: 'postgresql://user:password@localhost:5432/conversa',
   REDIS_URL: 'redis://:password@localhost:6379',
   API_SECRET: 'a-very-long-local-secret-with-at-least-32-characters',
 };

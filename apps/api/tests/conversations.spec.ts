@@ -8,7 +8,7 @@ import type { Conversation, ConversationRepository, Message } from '../src/conve
 import type { RealtimeGateway } from '../src/realtime/gateway.js';
 
 const config: AppConfig = {
-  DATABASE_URL: 'postgresql://user:password@localhost:5432/chat_yes_no', REDIS_URL: 'redis://:password@localhost:6379',
+  DATABASE_URL: 'postgresql://user:password@localhost:5432/conversa', REDIS_URL: 'redis://:password@localhost:6379',
   API_SECRET: 'a-very-long-local-secret-with-at-least-32-characters', SESSION_TTL_HOURS: 24, AUTH_RATE_LIMIT: 5,
   AUTH_RATE_LIMIT_WINDOW_SECONDS: 60, NODE_ENV: 'test', HOST: '127.0.0.1', PORT: 3000,
 };
