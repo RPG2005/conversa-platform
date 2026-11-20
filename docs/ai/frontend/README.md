@@ -10,8 +10,8 @@ Documentación de diseño e implementación del cliente de MVP 6. Complementa la
 | [06.2 Identidad](mvps/06.2-identidad.md) | Registro, login, restauración y logout | Completado |
 | [06.3 Chat](mvps/06.3-conversaciones.md) | Conversaciones, mensajes y paginación | Completado |
 | [06.4 Tiempo real](mvps/06.4-tiempo-real.md) | WebSocket, presencia, escritura y reconexión | Completado |
-| [06.5 Adjuntos](mvps/06.5-adjuntos-preferencias.md) | Adjuntos y preferencias de correo | En pruebas manuales |
-| [06.6 Operación](mvps/06.6-calidad-operacion.md) | E2E, accesibilidad, observabilidad y CI | Pendiente |
+| [06.5 Adjuntos](mvps/06.5-adjuntos-preferencias.md) | Adjuntos y preferencias de correo | Completado |
+| [06.6 Operación](mvps/06.6-calidad-operacion.md) | E2E, accesibilidad, observabilidad y CI | En pruebas |
 
 Cada ficha es una entrega integrable e independiente. Ejecuta sus pruebas antes de iniciar la siguiente.
 

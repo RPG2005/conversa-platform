@@ -1,0 +1,99 @@
+name: Quality gates
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend lint, tests and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+      - run: npm ci
+        working-directory: apps/frontend
+      - run: npm run lint
+        working-directory: apps/frontend
+      - run: npm run test:unit
+        working-directory: apps/frontend
+      - run: npm run build
+        working-directory: apps/frontend
+
+  api:
+    name: API lint, tests, types and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+      - run: npm ci
+        working-directory: apps/api
+      - run: npm run lint
+        working-directory: apps/api
+      - run: npm run test:unit
+        working-directory: apps/api
+      - run: npm run type-check
+        working-directory: apps/api
+      - run: npm run build
+        working-directory: apps/api
+
+  browser-e2e:
+    name: Docker E2E and accessibility
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_USER: chat_user
+      POSTGRES_PASSWORD: ci-postgres-password
+      POSTGRES_DB: chat_yes_no
+      REDIS_PASSWORD: ci-redis-password
+      API_SECRET: ci-api-secret-0123456789-0123456789-0123456789
+      S3_SECRET_KEY: ci-s3-secret-0123456789-0123456789
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+      - run: npm ci
+        working-directory: apps/frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/frontend
+      - name: Start dependencies
+        run: docker compose up -d postgres redis object-storage mailpit
+      - name: Build application images
+        run: docker compose --profile app build api frontend
+      - name: Apply database migrations
+        run: docker compose --profile app run --rm api npm run db:migrate
+      - name: Start API and frontend
+        run: docker compose --profile app up -d api frontend
+      - name: Wait for services
+        run: |
+          for attempt in {1..40}; do
+            if curl --fail --silent http://localhost:3000/health >/dev/null \
+              && curl --fail --silent http://localhost:5173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose --profile app logs api frontend
+          exit 1
+      - name: Run browser flow and accessibility audit
+        run: npm run test:e2e
+        working-directory: apps/frontend
+      - name: Stop stack
+        if: always()
+        run: docker compose --profile app down -v
