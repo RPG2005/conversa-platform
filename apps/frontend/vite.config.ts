@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
-  test: { environment: 'jsdom' },
+  test: { environment: 'jsdom', include: ['src/**/*.spec.ts', 'src/**/*.spec.tsx'] },
   server: {
     proxy: {
       '/api': {
