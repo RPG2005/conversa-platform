@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import UiState from '../components/UiState.vue'
 import { useConversationsStore } from '../stores/conversations'
 import { useSessionStore } from '../stores/session'
 import { formatDateTime } from '../format-date'
+import { useConversationRealtime } from '../composables/useConversationRealtime'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,17 +19,54 @@ const messages = computed(() => conversations.messagesFor(conversationId.value))
 const loading = computed(() => conversations.loadingMessagesByConversation[conversationId.value] ?? false)
 const loadError = computed(() => conversations.messageErrors[conversationId.value] ?? '')
 const hasOlder = computed(() => conversations.hasOlderMessages(conversationId.value))
+const messagePanel = ref()
+const realtime = useConversationRealtime(conversationId)
+const otherOnlineUsers = computed(() => realtime.onlineUsers.value.filter((userId) => userId !== session.user?.id))
+const otherTypingUsers = computed(() => realtime.typingUsers.value.filter((userId) => userId !== session.user?.id))
+const statusLabel = computed(() => ({
+  connecting: 'Conectando…',
+  syncing: 'Sincronizando…',
+  connected: 'En línea',
+  reconnecting: 'Reconectando…',
+  forbidden: 'Sin acceso',
+  closed: 'Desconectado',
+}[realtime.state.value]))
 
-watch(conversationId, (id) => conversations.loadMessages(id), { immediate: true })
+watch(conversationId, async (id) => {
+  await conversations.loadMessages(id)
+  await nextTick()
+  if (messagePanel.value) messagePanel.value.scrollTop = messagePanel.value.scrollHeight
+}, { immediate: true })
+
+watch(messages, async (_next, previous) => {
+  const panel = messagePanel.value
+  if (!panel || messages.value.length < (previous?.length ?? 0)) return
+  const nearBottom = panel.scrollHeight - panel.scrollTop - panel.clientHeight < 100
+  if (nearBottom) {
+    await nextTick()
+    panel.scrollTop = panel.scrollHeight
+  }
+})
+
+const loadOlder = async () => {
+  const panel = messagePanel.value
+  const oldHeight = panel?.scrollHeight ?? 0
+  await conversations.loadMessages(conversationId.value, true)
+  await nextTick()
+  if (panel) panel.scrollTop += panel.scrollHeight - oldHeight
+}
 
 const send = async () => {
   const submittedContent = content.value.trim()
   if (!submittedContent || sending.value) return
   sending.value = true
   sendError.value = ''
+  realtime.stopTyping()
   try {
     await conversations.sendMessage(conversationId.value, submittedContent)
     content.value = ''
+    await nextTick()
+    if (messagePanel.value) messagePanel.value.scrollTop = messagePanel.value.scrollHeight
   } catch (error) {
     sendError.value = error instanceof Error ? error.message : 'No se pudo enviar el mensaje.'
   } finally {
@@ -49,9 +87,17 @@ const send = async () => {
         ← Conversaciones
       </button>
       <h1>Chat {{ conversationId.slice(0, 8) }}</h1>
+      <span
+        class="connection-state"
+        :data-state="realtime.state.value"
+        aria-live="polite"
+      >
+        {{ statusLabel }}
+      </span>
     </header>
 
     <section
+      ref="messagePanel"
       class="message-panel"
       aria-label="Mensajes"
     >
@@ -61,7 +107,7 @@ const send = async () => {
           class="secondary-button"
           type="button"
           :disabled="loading"
-          @click="conversations.loadMessages(conversationId, true)"
+          @click="loadOlder"
         >
           {{ loading ? 'Cargando…' : 'Cargar mensajes anteriores' }}
         </button>
@@ -72,7 +118,7 @@ const send = async () => {
         title="Cargando mensajes…"
       />
       <div
-        v-else-if="loadError"
+        v-if="loadError"
         class="form-error"
         role="alert"
       >
@@ -85,12 +131,12 @@ const send = async () => {
         </button>
       </div>
       <UiState
-        v-else-if="messages.length === 0"
+        v-if="messages.length === 0 && !loading && !loadError"
         title="Todavía no hay mensajes"
         detail="Envía el primer mensaje para empezar la conversación."
       />
       <ol
-        v-else
+        v-if="messages.length > 0"
         class="message-list"
         aria-live="polite"
         aria-relevant="additions"
@@ -117,6 +163,27 @@ const send = async () => {
           </article>
         </li>
       </ol>
+      <p
+        v-if="realtime.syncError"
+        class="inline-error"
+        role="status"
+      >
+        La conexión está activa; se reintentará sincronizar: {{ realtime.syncError }}
+      </p>
+      <p
+        v-if="otherOnlineUsers.length"
+        class="presence-line"
+        role="status"
+      >
+        {{ otherOnlineUsers.length === 1 ? 'Otra persona está conectada' : `${otherOnlineUsers.length} personas conectadas` }}
+      </p>
+      <p
+        v-if="otherTypingUsers.length"
+        class="typing-line"
+        role="status"
+      >
+        {{ otherTypingUsers.length === 1 ? 'Otra persona está escribiendo…' : 'Hay personas escribiendo…' }}
+      </p>
     </section>
 
     <form
@@ -131,6 +198,9 @@ const send = async () => {
         maxlength="4000"
         placeholder="Escribe tu mensaje…"
         required
+        @input="realtime.noteTyping"
+        @blur="realtime.stopTyping"
+        @keydown.enter.exact.prevent="send"
       />
       <p
         v-if="sendError"

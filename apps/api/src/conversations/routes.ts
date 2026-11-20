@@ -225,7 +225,7 @@ export const registerConversationRoutes = (
       const lastMessage = messages.at(-1);
       return reply.send({
         messages: messages.map(toMessageDto),
-        syncCursor: lastMessage ? encodeCursor(lastMessage) : query.data.after,
+        syncCursor: lastMessage ? encodeCursor(lastMessage) : query.data.after ?? null,
         nextAfterCursor: messages.length === query.data.limit && lastMessage ? encodeCursor(lastMessage) : null,
       });
     }
@@ -237,6 +237,7 @@ export const registerConversationRoutes = (
     return reply.send({
       messages: messages.map(toMessageDto),
       nextCursor: messages.length === query.data.limit ? encodeCursor(messages[messages.length - 1]) : null,
+      syncCursor: messages.length ? encodeCursor(messages[0]) : null,
     });
   });
 };

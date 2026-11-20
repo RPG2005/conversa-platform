@@ -75,6 +75,21 @@ export const createRealtimeGateway = (publisher: Redis, subscriber: Redis): Real
     const [nextCursor, keys] = await publisher.scan('0', 'MATCH', presencePattern(conversationId, userId), 'COUNT', 1);
     return nextCursor !== '0' || keys.length > 0;
   };
+  const listOnlineUsers = async (conversationId: string) => {
+    const users = new Map<string, number>();
+    const pattern = `chat:presence:connection:${conversationId}:*`;
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await publisher.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = nextCursor;
+      await Promise.all(keys.map(async (key) => {
+        const [, , , , userId] = key.split(':');
+        const ttl = await publisher.ttl(key);
+        if (userId && ttl > 0) users.set(userId, Math.max(users.get(userId) ?? 0, ttl));
+      }));
+    } while (cursor !== '0');
+    return users;
+  };
   const expiry = (seconds: number) => new Date(Date.now() + seconds * 1_000).toISOString();
   const publish = async (event: RealtimeEvent) => {
     await publisher.publish(channel, JSON.stringify(event));
@@ -83,12 +98,19 @@ export const createRealtimeGateway = (publisher: Redis, subscriber: Redis): Real
   return {
     async subscribe(conversationId, userId, connectionId, socket) {
       await ensureSubscription();
-      const wasOnline = await hasPresence(conversationId, userId);
+      const existingUsers = await listOnlineUsers(conversationId);
+      for (const [existingUserId, remainingSeconds] of existingUsers) {
+        if (existingUserId === userId) continue;
+        socket.send(JSON.stringify({
+          type: 'presence.changed', conversationId, userId: existingUserId, online: true,
+          expiresAt: expiry(remainingSeconds),
+        }));
+      }
       await publisher.set(presenceKey(conversationId, userId, connectionId), '1', 'EX', presenceTtlSeconds);
       const subscribers = connections.get(conversationId) ?? new Set<WebSocket>();
       subscribers.add(socket);
       connections.set(conversationId, subscribers);
-      if (!wasOnline) await publish({ type: 'presence.changed', conversationId, userId, online: true, expiresAt: expiry(presenceTtlSeconds) });
+      await publish({ type: 'presence.changed', conversationId, userId, online: true, expiresAt: expiry(presenceTtlSeconds) });
       return async () => {
         subscribers.delete(socket);
         if (subscribers.size === 0) connections.delete(conversationId);
@@ -101,6 +123,7 @@ export const createRealtimeGateway = (publisher: Redis, subscriber: Redis): Real
     async handleCommand(conversationId, userId, connectionId, command) {
       if (command.type === 'presence.heartbeat') {
         await publisher.set(presenceKey(conversationId, userId, connectionId), '1', 'EX', presenceTtlSeconds);
+        await publish({ type: 'presence.changed', conversationId, userId, online: true, expiresAt: expiry(presenceTtlSeconds) });
         return;
       }
       if (command.type === 'typing.started') {

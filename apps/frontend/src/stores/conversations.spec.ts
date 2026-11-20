@@ -65,4 +65,34 @@ describe('conversations store', () => {
     await expect(store.sendMessage('chat-1', 'hello')).rejects.toThrow('Temporary failure')
     expect(store.messagesFor('chat-1')).toEqual([])
   })
+
+  it('synchronizes from the opaque cursor across multiple pages and deduplicates overlaps', async () => {
+    setActivePinia(createPinia())
+    const extra = { ...newer, id: '00000000-0000-4000-8000-000000000004', content: 'extra', createdAt: '2026-01-01T10:03:00.000Z' }
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ messages: [middle, newer], syncCursor: 'cursor-1', nextAfterCursor: 'cursor-1' }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ messages: [newer, extra], syncCursor: 'cursor-2', nextAfterCursor: null }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const store = useConversationsStore()
+    store.syncCursorByConversation['chat-1'] = 'start-cursor'
+
+    await store.syncMessages('chat-1')
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/conversations/chat-1/messages?limit=50&after=start-cursor', expect.any(Object))
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/conversations/chat-1/messages?limit=50&after=cursor-1', expect.any(Object))
+    expect(store.syncCursorByConversation['chat-1']).toBe('cursor-2')
+    expect(store.messagesFor('chat-1').map(({ id }) => id)).toEqual([middle.id, newer.id, extra.id])
+  })
+
+  it('expires presence and typing state at the server-provided timestamps', () => {
+    setActivePinia(createPinia())
+    const store = useConversationsStore()
+    store.applyRealtimeEvent({ type: 'presence.changed', conversationId: 'chat-1', userId: 'user-2', online: true, expiresAt: '2026-01-01T10:00:05.000Z' })
+    store.applyRealtimeEvent({ type: 'typing.changed', conversationId: 'chat-1', userId: 'user-2', active: true, expiresAt: '2026-01-01T10:00:03.000Z' })
+
+    store.expireRealtimeState('chat-1', Date.parse('2026-01-01T10:00:04.000Z'))
+
+    expect(store.presenceFor('chat-1')['user-2']?.online).toBe(true)
+    expect(store.typingFor('chat-1')['user-2']).toBeUndefined()
+  })
 })
