@@ -91,6 +91,17 @@ const openThenClose = (url: string, cookie: string) => new Promise<number>((reso
 afterEach(async () => { await Promise.all(apps.splice(0).map((app) => app.close())); });
 
 describe('conversation routes', () => {
+  it('returns a null synchronization cursor for an empty conversation', async () => {
+    const { app, cookie } = await setup();
+    const created = await app.inject({ method: 'POST', url: '/conversations', headers: { cookie: cookie('ada') }, payload: { participantEmail: 'bob@example.com' } });
+    const conversationId = created.json().conversation.id;
+
+    const response = await app.inject({ method: 'GET', url: `/conversations/${conversationId}/messages?limit=50`, headers: { cookie: cookie('ada') } });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ messages: [], nextCursor: null, syncCursor: null });
+  });
+
   it('creates a private conversation and hides it from non-members', async () => {
     const { app, cookie } = await setup();
     const created = await app.inject({ method: 'POST', url: '/conversations', headers: { cookie: cookie('ada') }, payload: { participantEmail: 'bob@example.com' } });
@@ -113,6 +124,7 @@ describe('conversation routes', () => {
     expect(firstPage.statusCode).toBe(200);
     expect(firstPage.json().messages[0].content).toBe('second');
     expect(firstPage.json().nextCursor).toEqual(expect.any(String));
+    expect(firstPage.json().syncCursor).toEqual(expect.any(String));
     const secondPage = await app.inject({ method: 'GET', url: `/conversations/${conversationId}/messages?limit=1&cursor=${firstPage.json().nextCursor}`, headers: { cookie: cookie('eve') } });
     expect(secondPage.json().messages[0].content).toBe('first');
 
