@@ -35,6 +35,7 @@ const signOut = async () => {
   signOutError.value = ''
   try {
     await session.logout()
+    conversations.clear()
     await router.replace('/access')
   } catch (error) {
     signOutError.value = error instanceof Error ? error.message : 'No se pudo cerrar la sesión. Inténtalo de nuevo.'
@@ -74,6 +75,13 @@ const signOut = async () => {
       role="alert"
     >
       {{ signOutError }}
+    </p>
+    <p
+      v-if="conversations.realtimeError"
+      class="form-error"
+      role="alert"
+    >
+      {{ conversations.realtimeError }}
     </p>
 
     <section

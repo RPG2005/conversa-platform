@@ -7,8 +7,19 @@ import ConversationView from './ConversationView.vue'
 
 afterEach(() => vi.unstubAllGlobals())
 
+class MockWebSocket {
+  readyState = 0
+  onopen: ((event: Event) => void) | null = null
+  onmessage: ((event: MessageEvent) => void) | null = null
+  onclose: ((event: CloseEvent) => void) | null = null
+  onerror: ((event: Event) => void) | null = null
+  send() {}
+  close() { this.readyState = 3 }
+}
+
 const createView = async (fetchMock: ReturnType<typeof vi.fn>) => {
   vi.stubGlobal('fetch', fetchMock)
+  vi.stubGlobal('WebSocket', MockWebSocket)
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: '/conversations/:conversationId', component: ConversationView }, { path: '/', component: { template: '<div />' } }],
