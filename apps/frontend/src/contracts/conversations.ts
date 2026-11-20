@@ -24,4 +24,5 @@ export interface Message {
 export interface MessagePage {
   messages: Message[]
   nextCursor: string | null
+  syncCursor: string | null
 }
