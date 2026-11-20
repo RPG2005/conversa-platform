@@ -16,4 +16,14 @@ describe('request', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')))
     await expect(request('/health')).rejects.toMatchObject({ status: 0 })
   })
+
+  it('notifies the app when a protected request returns 401', async () => {
+    const onExpired = vi.fn()
+    window.addEventListener('auth:expired', onExpired, { once: true })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })))
+
+    await expect(request('/conversations')).rejects.toMatchObject({ status: 401 })
+
+    expect(onExpired).toHaveBeenCalledOnce()
+  })
 })
