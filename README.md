@@ -1,4 +1,4 @@
-# Chat Yes/No Upgrade
+# Conversa Platform
 
 Base de desarrollo para evolucionar la aplicación a un chat autenticado, persistente y multiusuario.
 
