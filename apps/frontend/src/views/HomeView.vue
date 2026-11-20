@@ -54,7 +54,7 @@ const signOut = async () => {
     <header class="home-header">
       <div>
         <p class="eyebrow">
-          CHAT YES/NO
+          CONVERSA
         </p>
         <h1>Conversaciones</h1>
       </div>

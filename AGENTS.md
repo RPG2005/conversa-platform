@@ -2,7 +2,7 @@
 
 ## Objetivo del repositorio
 
-Construir Chat Yes/No como una plataforma de chat autenticada, persistente y multiusuario. El entorno local ya proporciona PostgreSQL, Redis, almacenamiento compatible con S3 y Mailpit.
+Construir Conversa, una plataforma de chat autenticada, persistente y multiusuario. El repositorio se llama `conversa-platform`; el entorno local proporciona PostgreSQL, Redis, almacenamiento compatible con S3 y Mailpit.
 
 ## Antes de modificar código
 

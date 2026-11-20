@@ -37,7 +37,7 @@ export const createNotificationWorker = (
         await mailer.sendMail({
           from: config.SMTP_FROM,
           to: target.email,
-          subject: 'Nuevo mensaje en Chat Yes/No',
+          subject: 'Nuevo mensaje en Conversa',
           text: `Hola ${target.displayName}, tienes un nuevo mensaje en una conversación.`,
         });
       }

@@ -1,5 +1,5 @@
 $kind: collection
-name: Chat Yes/No API
+name: Conversa API
 description: Pruebas de salud, identidad y conversaciones privadas para desarrollo local.
 variables:
   - key: base_url

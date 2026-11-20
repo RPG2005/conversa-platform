@@ -7,7 +7,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$collection = Join-Path $projectRoot 'postman/collections/chat-yes-no-api'
+$collection = Join-Path $projectRoot 'postman/collections/conversa-api'
 $environment = Join-Path $projectRoot 'postman/environments/local.environment.yaml'
 $runId = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds().ToString()
 $attachmentFile = $null
@@ -23,7 +23,7 @@ try {
   if ($health.status -ne 'ok') { throw 'La API no está sana. Ejecuta docker compose --profile app up -d --build api.' }
   $requestNames = @('health', 'register-ada', 'register-bob', 'register-eve', 'register-Mallory', 'create-conversation', 'eve-cannot-read', 'add-eve', 'send-ada-message', 'send-bob-message', 'list-first-message-page', 'list-next-message-page', 'Sync messages after reconnect', 'Get notification preferences', 'Update notification preferences')
   if ($Suite -in @('attachments', 'all')) {
-    $attachmentFile = Join-Path ([IO.Path]::GetTempPath()) "chat-yes-no-$runId.pdf"
+    $attachmentFile = Join-Path ([IO.Path]::GetTempPath()) "conversa-$runId.pdf"
     [IO.File]::WriteAllBytes($attachmentFile, [byte[]]::new(1024))
     $requestNames += @('Create attachment upload URL', 'Upload attachment binary', 'Complete attachment upload', 'Send Ada message with attachment', 'Get attachment download URL')
   }

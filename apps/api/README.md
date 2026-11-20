@@ -1,6 +1,6 @@
-# API de Chat Yes/No
+# API de Conversa
 
-API HTTP inicial de la plataforma. En el MVP 01 expone un healthcheck y prepara el esquema de usuarios.
+API HTTP y WebSocket de Conversa para identidad, conversaciones privadas, mensajes, adjuntos y notificaciones.
 
 ## Configuración
 
@@ -8,7 +8,7 @@ API HTTP inicial de la plataforma. En el MVP 01 expone un healthcheck y prepara 
 Copy-Item .env.example .env
 ```
 
-Completa los valores de `DATABASE_URL`, `REDIS_URL` y `API_SECRET`. Para ejecutar desde el equipo anfitrión, usa `localhost` en las URL de PostgreSQL y Redis. Para ejecutar desde un futuro contenedor de API, usa los nombres de servicio `postgres` y `redis`.
+Completa los valores de `DATABASE_URL`, `REDIS_URL` y `API_SECRET`. Para ejecutar desde el equipo anfitrión, usa `localhost` en las URL de PostgreSQL y Redis. Para ejecutar desde el contenedor de API, usa los nombres de servicio `postgres` y `redis`.
 
 Con el entorno raíz configurado, también puede iniciarse mediante Docker:
 

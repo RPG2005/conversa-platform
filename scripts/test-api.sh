@@ -3,7 +3,7 @@ set -euo pipefail
 suite="${1:-all}"
 test_password="${TEST_PASSWORD:-local-test-password-123}"
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-collection="$project_root/postman/collections/chat-yes-no-api"
+collection="$project_root/postman/collections/conversa-api"
 environment="$project_root/postman/environments/local.environment.yaml"
 run_id="$(date +%s%3N)"
 attachment_file=""
@@ -13,7 +13,7 @@ for attempt in {1..20}; do curl --fail --silent http://localhost:3000/health >/d
 curl --fail --silent http://localhost:3000/health >/dev/null || { echo 'La API no está sana. Ejecuta docker compose --profile app up -d --build api.' >&2; exit 1; }
 requests=(health register-ada register-bob register-eve register-Mallory create-conversation eve-cannot-read add-eve send-ada-message send-bob-message list-first-message-page list-next-message-page 'Sync messages after reconnect' 'Get notification preferences' 'Update notification preferences')
 if [[ "$suite" == attachments || "$suite" == all ]]; then
-  attachment_file="$(mktemp -t "chat-yes-no-${run_id}-XXXXXX.pdf")"
+  attachment_file="$(mktemp -t "conversa-${run_id}-XXXXXX.pdf")"
   trap 'rm -f "$attachment_file"' EXIT
   dd if=/dev/zero of="$attachment_file" bs=1024 count=1 status=none
   requests+=('Create attachment upload URL' 'Upload attachment binary' 'Complete attachment upload' 'Send Ada message with attachment' 'Get attachment download URL')

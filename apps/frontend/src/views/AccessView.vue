@@ -30,7 +30,7 @@ const submit = async () => {
 <template>
   <main class="auth-card">
     <p class="eyebrow">
-      CHAT YES/NO
+      CONVERSA
     </p>
     <h1>{{ registering ? 'Crear cuenta' : 'Bienvenido de nuevo' }}</h1>
     <p class="intro">

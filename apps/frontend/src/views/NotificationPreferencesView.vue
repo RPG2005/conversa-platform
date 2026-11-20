@@ -32,7 +32,7 @@ const save = async () => {
         ← Conversaciones
       </button>
       <p class="eyebrow">
-        CHAT YES/NO
+        CONVERSA
       </p>
       <h1>Preferencias de notificación</h1>
       <p class="intro">

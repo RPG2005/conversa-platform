@@ -72,6 +72,11 @@ jobs:
         working-directory: apps/frontend
       - run: npx playwright install --with-deps chromium
         working-directory: apps/frontend
+      - name: Prepare stable volume names
+        run: |
+          for volume in chat-yes-no-upgrade_postgres_data chat-yes-no-upgrade_redis_data chat-yes-no-upgrade_object_storage_data chat-yes-no-upgrade_frontend_node_modules; do
+            docker volume create "$volume" >/dev/null
+          done
       - name: Start dependencies
         run: docker compose up -d postgres redis object-storage mailpit
       - name: Build application images

@@ -1,5 +1,5 @@
 {
-  "name": "@chat-yes-no/contracts",
+  "name": "@conversa-platform/contracts",
   "version": "0.1.0",
   "private": true,
   "type": "module"
